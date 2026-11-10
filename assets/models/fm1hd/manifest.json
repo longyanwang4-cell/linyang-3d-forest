@@ -1,0 +1,728 @@
+{
+ "generated_at": "2026-11-01T14:14:20",
+ "source_year": 2023,
+ "trees": [
+  {
+   "index": 0,
+   "seq_no": 129,
+   "tag": "1165",
+   "species": "落叶松",
+   "species_key": "larch",
+   "x": 21.63,
+   "y": 17.16,
+   "dbh_cm": 5.1,
+   "height_m": 5.0,
+   "crown_ns_m": 2.0,
+   "crown_ew_m": 2.0,
+   "crown_avg_m": 2.0,
+   "row_index": 130,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "larch_1165_L0.glb",
+    "L1": "larch_1165_L1.glb",
+    "L2": "larch_1165_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.0012,
+    "height_error_m": 0.0,
+    "triangles": 40380,
+    "needle_pads": 9276
+   }
+  },
+  {
+   "index": 1,
+   "seq_no": 159,
+   "tag": "1581",
+   "species": "落叶松",
+   "species_key": "larch",
+   "x": 27.57,
+   "y": 2.48,
+   "dbh_cm": 9.3,
+   "height_m": 10.0,
+   "crown_ns_m": 2.5,
+   "crown_ew_m": 2.4,
+   "crown_avg_m": 2.45,
+   "row_index": 160,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "larch_1581_L0.glb",
+    "L1": "larch_1581_L1.glb",
+    "L2": "larch_1581_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.0023,
+    "height_error_m": 0.0,
+    "triangles": 40180,
+    "needle_pads": 8692
+   }
+  },
+  {
+   "index": 2,
+   "seq_no": 141,
+   "tag": "1352",
+   "species": "落叶松",
+   "species_key": "larch",
+   "x": 28.95,
+   "y": 26.07,
+   "dbh_cm": 13.5,
+   "height_m": 16.5,
+   "crown_ns_m": 2.5,
+   "crown_ew_m": 2.7,
+   "crown_avg_m": 2.6,
+   "row_index": 142,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "larch_1352_L0.glb",
+    "L1": "larch_1352_L1.glb",
+    "L2": "larch_1352_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.0033,
+    "height_error_m": 0.0,
+    "triangles": 41876,
+    "needle_pads": 9028
+   }
+  },
+  {
+   "index": 3,
+   "seq_no": 144,
+   "tag": "1444",
+   "species": "落叶松",
+   "species_key": "larch",
+   "x": 25.78,
+   "y": 22.42,
+   "dbh_cm": 18.0,
+   "height_m": 20.9,
+   "crown_ns_m": 3.7,
+   "crown_ew_m": 3.2,
+   "crown_avg_m": 3.45,
+   "row_index": 145,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "larch_1444_L0.glb",
+    "L1": "larch_1444_L1.glb",
+    "L2": "larch_1444_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.0044,
+    "height_error_m": 0.0,
+    "triangles": 41156,
+    "needle_pads": 8964
+   }
+  },
+  {
+   "index": 4,
+   "seq_no": 151,
+   "tag": "0322",
+   "species": "落叶松",
+   "species_key": "larch",
+   "x": 25.83,
+   "y": 13.65,
+   "dbh_cm": 24.7,
+   "height_m": 23.9,
+   "crown_ns_m": 4.4,
+   "crown_ew_m": 4.9,
+   "crown_avg_m": 4.65,
+   "row_index": 152,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "larch_0322_L0.glb",
+    "L1": "larch_0322_L1.glb",
+    "L2": "larch_0322_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.006,
+    "height_error_m": 0.0,
+    "triangles": 42716,
+    "needle_pads": 9320
+   }
+  },
+  {
+   "index": 5,
+   "seq_no": 17,
+   "tag": "0217",
+   "species": "落叶松",
+   "species_key": "larch",
+   "x": 0.27,
+   "y": 16.73,
+   "dbh_cm": 7.15,
+   "height_m": 16.0,
+   "crown_ns_m": 1.5,
+   "crown_ew_m": 2.1,
+   "crown_avg_m": 1.8,
+   "row_index": 18,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "larch_0217_L0.glb",
+    "L1": "larch_0217_L1.glb",
+    "L2": "larch_0217_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.0017,
+    "height_error_m": 0.0,
+    "triangles": 41540,
+    "needle_pads": 8980
+   }
+  },
+  {
+   "index": 6,
+   "seq_no": 128,
+   "tag": "0976",
+   "species": "落叶松",
+   "species_key": "larch",
+   "x": 21.78,
+   "y": 15.16,
+   "dbh_cm": 13.85,
+   "height_m": 18.5,
+   "crown_ns_m": 2.5,
+   "crown_ew_m": 2.2,
+   "crown_avg_m": 2.35,
+   "row_index": 129,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "larch_0976_L0.glb",
+    "L1": "larch_0976_L1.glb",
+    "L2": "larch_0976_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.0017,
+    "height_error_m": 0.0,
+    "triangles": 41276,
+    "needle_pads": 8980
+   }
+  },
+  {
+   "index": 7,
+   "seq_no": 158,
+   "tag": "1728",
+   "species": "落叶松",
+   "species_key": "larch",
+   "x": 28.85,
+   "y": 5.46,
+   "dbh_cm": 21.2,
+   "height_m": 22.5,
+   "crown_ns_m": 4.8,
+   "crown_ew_m": 3.6,
+   "crown_avg_m": 4.2,
+   "row_index": 159,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "larch_1728_L0.glb",
+    "L1": "larch_1728_L1.glb",
+    "L2": "larch_1728_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.0052,
+    "height_error_m": 0.001,
+    "triangles": 43628,
+    "needle_pads": 9632
+   }
+  },
+  {
+   "index": 8,
+   "seq_no": 48,
+   "tag": "1034",
+   "species": "白桦",
+   "species_key": "birch",
+   "x": 8.7,
+   "y": 9.4,
+   "dbh_cm": 5.9,
+   "height_m": 8.5,
+   "crown_ns_m": 2.0,
+   "crown_ew_m": 3.0,
+   "crown_avg_m": 2.5,
+   "row_index": 49,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "birch_1034_L0.glb",
+    "L1": "birch_1034_L1.glb",
+    "L2": "birch_1034_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.0,
+    "height_error_m": 0.0,
+    "triangles": null,
+    "L1_triangles": 20805,
+    "L2_triangles": 9045
+   }
+  },
+  {
+   "index": 9,
+   "seq_no": 73,
+   "tag": "1293",
+   "species": "白桦",
+   "species_key": "birch",
+   "x": 14.42,
+   "y": 17.43,
+   "dbh_cm": 10.8,
+   "height_m": 21.0,
+   "crown_ns_m": 1.7,
+   "crown_ew_m": 3.0,
+   "crown_avg_m": 2.35,
+   "row_index": 74,
+   "source_file": "FM1-2023.xls",
+   "survey_year": 2023,
+   "files": {
+    "L0": "birch_1293_L0.glb",
+    "L1": "birch_1293_L1.glb",
+    "L2": "birch_1293_L2.glb"
+   },
+   "checks": {
+    "dbh_error_m": 0.0,
+    "height_error_m": 0.0,
+    "triangles": null,
+    "L1_triangles": 20804,
+    "L2_triangles": 9045
+   }
+  }
+ ],
+ "bg_variants": {
+  "larch": [
+   {
+    "file": "bg/bg_larch_0.glb",
+    "h": 16.2,
+    "dbh": 15.61,
+    "tris": 9052
+   },
+   {
+    "file": "bg/bg_larch_1.glb",
+    "h": 15.75,
+    "dbh": 9.34,
+    "tris": 8892
+   },
+   {
+    "file": "bg/bg_larch_2.glb",
+    "h": 22.0,
+    "dbh": 20.01,
+    "tris": 9164
+   },
+   {
+    "file": "bg/bg_larch_3.glb",
+    "h": 5.5,
+    "dbh": 5.0,
+    "tris": 7180
+   },
+   {
+    "file": "bg/bg_larch_4.glb",
+    "h": 19.0,
+    "dbh": 15.1,
+    "tris": 8988
+   },
+   {
+    "file": "bg/bg_larch_5.glb",
+    "h": 17.0,
+    "dbh": 8.5,
+    "tris": 8860
+   },
+   {
+    "file": "bg/bg_larch_6.glb",
+    "h": 19.3,
+    "dbh": 21.0,
+    "tris": 8748
+   },
+   {
+    "file": "bg/bg_larch_7.glb",
+    "h": 9.1,
+    "dbh": 7.1,
+    "tris": 8956
+   },
+   {
+    "file": "bg/bg_larch_8.glb",
+    "h": 14.0,
+    "dbh": 10.0,
+    "tris": 8428
+   },
+   {
+    "file": "bg/bg_larch_9.glb",
+    "h": 5.1,
+    "dbh": 5.2,
+    "tris": 7548
+   },
+   {
+    "file": "bg/bg_larch_10.glb",
+    "h": 21.0,
+    "dbh": 16.3,
+    "tris": 8524
+   },
+   {
+    "file": "bg/bg_larch_11.glb",
+    "h": 15.0,
+    "dbh": 11.6,
+    "tris": 8700
+   }
+  ],
+  "birch": [
+   {
+    "file": "bg/bg_birch_0.glb",
+    "h": 10.5,
+    "dbh": 7.49
+   },
+   {
+    "file": "bg/bg_birch_1.glb",
+    "h": 9.0,
+    "dbh": 5.2
+   },
+   {
+    "file": "bg/bg_birch_2.glb",
+    "h": 15.75,
+    "dbh": 10.4
+   },
+   {
+    "file": "bg/bg_birch_3.glb",
+    "h": 21.0,
+    "dbh": 10.8
+   }
+  ]
+ },
+ "per_year": [
+  {
+   "tag": "1165",
+   "year": 2023,
+   "status": "ok",
+   "file": "larch_1165_2023_L0.glb",
+   "dbh": 5.1,
+   "height": 5.0,
+   "crown": 2.0,
+   "crown_mark": "measured",
+   "crown_ns": 2.0,
+   "crown_ew": 2.0,
+   "checks": {
+    "dbh_error_m": 0.0013,
+    "height_error_m": 0.0
+   },
+   "row": 130
+  },
+  {
+   "tag": "1581",
+   "year": 2023,
+   "status": "ok",
+   "file": "larch_1581_2023_L0.glb",
+   "dbh": 9.3,
+   "height": 10.0,
+   "crown": 2.45,
+   "crown_mark": "measured",
+   "crown_ns": 2.5,
+   "crown_ew": 2.4,
+   "checks": {
+    "dbh_error_m": 0.0023,
+    "height_error_m": 0.0
+   },
+   "row": 160
+  },
+  {
+   "tag": "1352",
+   "year": 2023,
+   "status": "ok",
+   "file": "larch_1352_2023_L0.glb",
+   "dbh": 13.5,
+   "height": 16.5,
+   "crown": 2.6,
+   "crown_mark": "measured",
+   "crown_ns": 2.5,
+   "crown_ew": 2.7,
+   "checks": {
+    "dbh_error_m": 0.0033,
+    "height_error_m": 0.0
+   },
+   "row": 142
+  },
+  {
+   "tag": "1444",
+   "year": 2023,
+   "status": "ok",
+   "file": "larch_1444_2023_L0.glb",
+   "dbh": 18.0,
+   "height": 20.9,
+   "crown": 3.45,
+   "crown_mark": "measured",
+   "crown_ns": 3.7,
+   "crown_ew": 3.2,
+   "checks": {
+    "dbh_error_m": 0.0044,
+    "height_error_m": 0.0
+   },
+   "row": 145
+  },
+  {
+   "tag": "0322",
+   "year": 2023,
+   "status": "ok",
+   "file": "larch_0322_2023_L0.glb",
+   "dbh": 24.7,
+   "height": 23.9,
+   "crown": 4.65,
+   "crown_mark": "measured",
+   "crown_ns": 4.4,
+   "crown_ew": 4.9,
+   "checks": {
+    "dbh_error_m": 0.0061,
+    "height_error_m": 0.0
+   },
+   "row": 152
+  },
+  {
+   "tag": "0217",
+   "year": 2023,
+   "status": "ok",
+   "file": "larch_0217_2023_L0.glb",
+   "dbh": 7.15,
+   "height": 16.0,
+   "crown": 1.8,
+   "crown_mark": "measured",
+   "crown_ns": 1.5,
+   "crown_ew": 2.1,
+   "checks": {
+    "dbh_error_m": 0.0017,
+    "height_error_m": 0.0
+   },
+   "row": 18
+  },
+  {
+   "tag": "0976",
+   "year": 2023,
+   "status": "ok",
+   "file": "larch_0976_2023_L0.glb",
+   "dbh": 13.85,
+   "height": 18.5,
+   "crown": 2.35,
+   "crown_mark": "measured",
+   "crown_ns": 2.5,
+   "crown_ew": 2.2,
+   "checks": {
+    "dbh_error_m": 0.0018,
+    "height_error_m": 0.0
+   },
+   "row": 129
+  },
+  {
+   "tag": "1728",
+   "year": 2023,
+   "status": "ok",
+   "file": "larch_1728_2023_L0.glb",
+   "dbh": 21.2,
+   "height": 22.5,
+   "crown": 4.2,
+   "crown_mark": "measured",
+   "crown_ns": 4.8,
+   "crown_ew": 3.6,
+   "checks": {
+    "dbh_error_m": 0.0052,
+    "height_error_m": 0.0
+   },
+   "row": 159
+  },
+  {
+   "tag": "1034",
+   "year": 2023,
+   "status": "ok",
+   "file": "birch_1034_2023_L0.glb",
+   "dbh": 5.9,
+   "height": 8.5,
+   "crown": 2.5,
+   "crown_mark": "measured",
+   "crown_ns": 2.0,
+   "crown_ew": 3.0,
+   "checks": {
+    "dbh_error_m": 0.0,
+    "height_error_m": 0.0
+   },
+   "row": 49
+  },
+  {
+   "tag": "1293",
+   "year": 2023,
+   "status": "ok",
+   "file": "birch_1293_2023_L0.glb",
+   "dbh": 10.8,
+   "height": 21.0,
+   "crown": 2.35,
+   "crown_mark": "measured",
+   "crown_ns": 1.7,
+   "crown_ew": 3.0,
+   "checks": {
+    "dbh_error_m": 0.0,
+    "height_error_m": 0.0
+   },
+   "row": 74
+  },
+  {
+   "tag": "1165",
+   "year": 2026,
+   "status": "ok",
+   "file": "larch_1165_2026_L0.glb",
+   "dbh": 4.9,
+   "height": 5.7,
+   "crown": 1.45,
+   "crown_mark": "measured",
+   "crown_ns": 1.4,
+   "crown_ew": 1.5,
+   "checks": {
+    "dbh_error_m": 0.0012,
+    "height_error_m": 0.0
+   },
+   "row": 130
+  },
+  {
+   "tag": "1581",
+   "year": 2026,
+   "status": "ok",
+   "file": "larch_1581_2026_L0.glb",
+   "dbh": 9.1,
+   "height": 8.8,
+   "crown": 2.45,
+   "crown_mark": "measured",
+   "crown_ns": 2.4,
+   "crown_ew": 2.5,
+   "checks": {
+    "dbh_error_m": 0.0011,
+    "height_error_m": 0.0
+   },
+   "row": 160
+  },
+  {
+   "tag": "1352",
+   "year": 2026,
+   "status": "ok",
+   "file": "larch_1352_2026_L0.glb",
+   "dbh": 12.6,
+   "height": 11.2,
+   "crown": 2.35,
+   "crown_mark": "measured",
+   "crown_ns": 2.7,
+   "crown_ew": 2.0,
+   "checks": {
+    "dbh_error_m": 0.0031,
+    "height_error_m": 0.0
+   },
+   "row": 142
+  },
+  {
+   "tag": "1444",
+   "year": 2026,
+   "status": "ok",
+   "file": "larch_1444_2026_L0.glb",
+   "dbh": 18.2,
+   "height": 15.8,
+   "crown": 5.25,
+   "crown_mark": "measured",
+   "crown_ns": 5.4,
+   "crown_ew": 5.1,
+   "checks": {
+    "dbh_error_m": 0.0045,
+    "height_error_m": 0.0
+   },
+   "row": 145
+  },
+  {
+   "tag": "0322",
+   "year": 2026,
+   "status": "ok",
+   "file": "larch_0322_2026_L0.glb",
+   "dbh": 25.0,
+   "height": 13.7,
+   "crown": 4.5,
+   "crown_mark": "measured",
+   "crown_ns": 4.3,
+   "crown_ew": 4.7,
+   "checks": {
+    "dbh_error_m": 0.0061,
+    "height_error_m": 0.0
+   },
+   "row": 152
+  },
+  {
+   "tag": "0217",
+   "year": 2026,
+   "status": "ok",
+   "file": "larch_0217_2026_L0.glb",
+   "dbh": 6.9,
+   "height": 8.8,
+   "crown": 2.15,
+   "crown_mark": "measured",
+   "crown_ns": 2.1,
+   "crown_ew": 2.2,
+   "checks": {
+    "dbh_error_m": 0.0015,
+    "height_error_m": 0.0
+   },
+   "row": 18
+  },
+  {
+   "tag": "0976",
+   "year": 2026,
+   "status": "ok",
+   "file": "larch_0976_2026_L0.glb",
+   "dbh": 14.0,
+   "height": 12.3,
+   "crown": 3.35,
+   "crown_mark": "measured",
+   "crown_ns": 3.4,
+   "crown_ew": 3.3,
+   "checks": {
+    "dbh_error_m": 0.0034,
+    "height_error_m": 0.0
+   },
+   "row": 129
+  },
+  {
+   "tag": "1728",
+   "year": 2026,
+   "status": "ok",
+   "file": "larch_1728_2026_L0.glb",
+   "dbh": 21.8,
+   "height": 14.6,
+   "crown": 5.0,
+   "crown_mark": "measured",
+   "crown_ns": 4.7,
+   "crown_ew": 5.3,
+   "checks": {
+    "dbh_error_m": 0.0053,
+    "height_error_m": 0.001
+   },
+   "row": 159
+  },
+  {
+   "tag": "1034",
+   "year": 2026,
+   "status": "ok",
+   "file": "birch_1034_2026_L0.glb",
+   "dbh": 5.7,
+   "height": 6.6,
+   "crown": 1.6,
+   "crown_mark": "measured",
+   "crown_ns": 1.5,
+   "crown_ew": 1.7,
+   "checks": {
+    "dbh_error_m": 0.3878,
+    "height_error_m": 0.0
+   },
+   "row": 49
+  },
+  {
+   "tag": "1293",
+   "year": 2026,
+   "status": "ok",
+   "file": "birch_1293_2026_L0.glb",
+   "dbh": 12.0,
+   "height": 11.8,
+   "crown": 2.55,
+   "crown_mark": "measured",
+   "crown_ns": 2.7,
+   "crown_ew": 2.4,
+   "checks": {
+    "dbh_error_m": 0.0,
+    "height_error_m": 0.0
+   },
+   "row": 74
+  }
+ ]
+}

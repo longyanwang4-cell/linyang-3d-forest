@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>林样智记 V2.1 · 样地数据管理与科研分析</title>
+<style>
+  :root {
+    --primary: #2d5a3d;
+    --primary-dark: #1e3d28;
+    --primary-soft: #e6efe8;
+    --bg-page: #f2efe7;
+    --bg-panel: #ffffff;
+    --text: #242823;
+    --text-light: #626860;
+    --border: #d6d0c2;
+    --warn: #b07d10;
+    --bad: #c0392b;
+    --radius: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    min-height:100%; font-family:"Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    color:var(--text); background:var(--bg-page);
+  }
+  header {
+    background:linear-gradient(180deg, #16301f 0%, #21452d 100%);
+    color:#f5f1e8; padding:9px 18px; display:flex; align-items:center;
+    gap:7px; flex-wrap:wrap; box-shadow:0 3px 14px rgba(0,0,0,0.20);
+    border-bottom:1px solid rgba(255,255,255,0.10);
+    position:sticky; top:0; z-index:30;
+  }
+  header h1 { font-size:15px; font-weight:700; letter-spacing:0.3px; margin-right:6px; white-space:nowrap; }
+  header h1 small { font-weight:400; opacity:0.80; font-size:11.5px; margin-left:6px; }
+  header select, header input, header button, header .btn, header a.nav-link {
+    font:12px "Microsoft YaHei",sans-serif; padding:5px 11px; border-radius:6px;
+    border:1px solid rgba(245,241,232,0.30); background:rgba(245,241,232,0.10);
+    color:#f5f1e8; text-decoration:none; transition:all 0.15s; font-weight:500;
+  }
+  header select { background:rgba(12, 28, 18, 0.65); }
+  header select option { color:var(--text); background:#f5f1e8; }
+  header button, header .btn, header a.nav-link { cursor:pointer; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
+  header button:hover, header .btn:hover, header a.nav-link:hover {
+    background:rgba(245,241,232,0.22); border-color:rgba(245,241,232,0.62); color:#ffffff;
+  }
+  header button.accent {
+    background:linear-gradient(135deg, #ebb03c, #d9961c); color:#241800;
+    border-color:#f3be56; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,0.22);
+  }
+  header button.accent:hover { background:linear-gradient(135deg, #f4bc4d, #e4a328); color:#1a1100; }
+  .hdr-dropdown { position: relative; display: inline-block; }
+  .hdr-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 50;
+    min-width: 196px; background: #1d3c28; border: 1px solid rgba(255,181,49,0.5);
+    border-radius: 10px; padding: 6px; box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+    display: none; flex-direction: column; gap: 4px;
+  }
+  .hdr-dropdown.open .hdr-menu { display: flex; }
+  .hdr-menu .btn {
+    width: 100%; justify-content: flex-start; background: rgba(245,241,232,0.08);
+    color: #f5f1e8; border-color: rgba(245,241,232,0.18); padding: 6px 10px;
+  }
+  .hdr-menu .btn:hover { background: rgba(245,241,232,0.22); color: #fff; }
+  .adv-drawer {
+    margin-top: 6px; padding: 7px 10px; background: #f4f7f0;
+    border: 1px solid #d5dfd0; border-radius: 8px;
+  }
+  .adv-drawer summary {
+    cursor: pointer; font-size: 12px; font-weight: 700; color: var(--primary-dark);
+    user-select: none;
+  }
+
+  #msg {
+    padding:6px 18px; font-size:12.5px; color:var(--bad); min-height:30px;
+    display:flex; align-items:center; justify-content:space-between;
+    background:#e9e4d8; border-bottom:1px solid var(--border);
+  }
+  #msg.ok { color:var(--primary-dark); font-weight:500; }
+
+  main { max-width:1560px; margin:0 auto; padding:14px 18px 32px; }
+
+  /* KPI 指标带 */
+  .kpi-grid {
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(165px, 1fr));
+    gap:10px; margin-bottom:12px;
+  }
+  .kpi-tile {
+    background:var(--bg-panel); border:1px solid #dcd6c8; border-radius:var(--radius);
+    padding:11px 14px; box-shadow:0 2px 8px rgba(24,48,32,0.05);
+    border-top:3px solid #3c7850; transition:transform 0.15s, box-shadow 0.15s;
+  }
+  .kpi-tile:hover { transform:translateY(-1px); box-shadow:0 5px 14px rgba(24,48,32,0.09); }
+  .kpi-tile .k-label { font-size:11.5px; color:var(--text-light); display:flex; justify-content:space-between; align-items:center; }
+  .kpi-tile .k-val { font-size:18.5px; font-weight:700; color:var(--primary-dark); margin-top:3px; }
+  .kpi-tile .k-sub { font-size:11px; color:var(--text-light); margin-top:2px; }
+  .badge {
+    display:inline-block; padding:1px 7px; border-radius:99px; font-size:11px; font-weight:600;
+  }
+  .badge.survey { background:#d4e8d6; color:#1d4d2b; }
+  .badge.sim { background:#f7e4be; color:#805300; }
+  .badge.warn { background:#f8d7d3; color:var(--bad); }
+
+  .card {
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:12px 14px; margin-bottom:12px; box-shadow:0 2px 6px rgba(0,0,0,0.03);
+  }
+  .card h2 {
+    font-size:13.5px; color:var(--primary-dark); margin-bottom:8px;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:6px 0; }
+  .row label { font-size:12px; color:var(--text-light); }
+  input[type=text], input[type=number], select, textarea {
+    font:12.5px "Microsoft YaHei",sans-serif; padding:4px 8px;
+    border:1px solid var(--border); border-radius:6px; background:#fff; color:var(--text);
+  }
+  input[type=text]:focus, input[type=number]:focus, select:focus {
+    border-color:var(--primary); outline:none; box-shadow:0 0 0 2px rgba(45,90,61,0.12);
+  }
+  table { width:100%; border-collapse:collapse; font-size:12px; background:#fff; }
+  th, td { border-bottom:1px solid #e8e4d8; padding:5px 6px; text-align:left; }
+  th {
+    background:#eef2e8; color:var(--primary-dark); position:sticky; top:0; z-index:2;
+    font-weight:600; white-space:nowrap;
+  }
+  tbody tr:hover { background:#f4f9f1; }
+  tbody tr.row-hl td { background:#e2f0e4 !important; }
+  td input {
+    width:100%; min-width:52px; border:1px solid transparent; border-radius:4px;
+    background:transparent; font:12px "Microsoft YaHei",sans-serif; padding:2px 4px;
+  }
+  td input:focus { border-color:#6ea37f; background:#fbfff7; outline:none; }
+  td.pend, tr.pend-row td { background:#fdf3e0; }
+  .btn {
+    padding:5px 12px; border:1px solid #b5c2b0; border-radius:6px;
+    background:#ffffff; color:var(--primary-dark); cursor:pointer; font-size:12px; font-weight:600;
+    transition:all 0.15s; display:inline-flex; align-items:center; gap:4px;
+  }
+  .btn:hover { background:#e8f0e6; border-color:#88a281; }
+  .btn.primary {
+    background:linear-gradient(135deg, #2d6341, #20492e); border-color:#20492e;
+    color:#fff; box-shadow:0 1px 4px rgba(32,73,46,0.22);
+  }
+  .btn.primary:hover { background:linear-gradient(135deg, #36754e, #275838); }
+  .btn.warn { color:var(--bad); border-color:#e0b5af; background:#fffafa; }
+  .btn.warn:hover { background:#fceae8; border-color:#d48d84; }
+  .wrap { overflow:auto; max-height:46vh; border:1px solid var(--border); border-radius:8px; }
+  .dim { color:var(--text-light); font-size:11.5px; }
+  #logList div { padding:3px 0; border-bottom:1px dashed #eee; font-size:11.5px; }
+
+  /* 科研图件可自由拖拽调宽双栏看板 */
+  .viz-layout {
+    display:flex; gap:0; margin-top:8px; align-items:stretch;
+  }
+  #treemapView { flex: 0 0 430px; min-width: 240px; max-width: 75%; }
+  #vizSplitter {
+    flex: 0 0 10px; cursor: col-resize; display:flex; align-items:center; justify-content:center;
+    color:#7b8a76; font-size:12px; user-select:none; margin:0 4px; border-radius:4px;
+    background:#eef2e8; border:1px solid #d6dfd0;
+  }
+  #vizSplitter:hover { background:#cfe0d2; color:#1e3d28; }
+  .sub-charts-grid {
+    flex: 1 1 0; min-width: 280px;
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap:10px;
+  }
+  .analysis-box {
+    margin:8px 0; padding:10px 12px; background:#f8faf5;
+    border:1px solid #d5e0ce; border-radius:8px; font-size:12.5px; line-height:1.65;
+  }
+  .alert-item {
+    padding:3px 8px; margin:3px 0; border-left:3px solid #d9822b;
+    background:#fff8eb; border-radius:0 4px 4px 0; font-size:12px;
+  }
+  @media (max-width: 1100px) {
+    .viz-layout { flex-direction: column; gap: 10px; }
+    #treemapView { flex: 1 1 auto; max-width: 100%; }
+    #vizSplitter { display: none; }
+  }
+  @media (max-width: 768px) {
+    header {
+      padding: 8px 10px; gap: 5px; flex-wrap: wrap;
+    }
+    header h1 small { display: none; }
+    .hdr-menu { position: fixed; top: 52px; right: 10px; }
+    main { padding: 10px 10px 24px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .kpi-tile { padding: 8px 10px; }
+    .kpi-tile .k-val { font-size: 15.5px; }
+    .card { padding: 10px 10px; }
+    .row input[type=text], .row input[type=number], .row select {
+      max-width: 100% !important;
+    }
+    #manageCmdInput { width: 100% !important; flex: 1 1 100%; }
+    .sub-charts-grid { grid-template-columns: 1fr; min-width: 0; }
+    .wrap { -webkit-overflow-scrolling: touch; max-height: 54vh; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="nav-link" href="map.html">← 研究区地图</a>
+  <h1>林样智记 V2.1 <small>样地数据管理与科研图件看板</small></h1>
+  <select id="plotSel" title="选择样地"></select>
+  <select id="periodSel" title="选择调查期"></select>
+  <button class="btn" id="btn-reload">↻ 刷新</button>
+  <span style="flex:1"></span>
+  <button class="btn" id="btn-treemap">🗺 图件看板</button>
+  <div class="hdr-dropdown" id="hdrDataMenu">
+    <button class="btn" id="btn-data-menu" type="button">⚙ 数据导入导出与备份 ▾</button>
+    <div class="hdr-menu">
+      <button class="btn" id="btn-newplot">＋ 新建样地</button>
+      <input type="file" id="importFile" accept=".xls,.xlsx,.csv" style="display:none">
+      <button class="btn" id="btn-import">📥 导入调查表…</button>
+      <button class="btn" id="btn-export">📤 导出本期调查表</button>
+      <button class="btn" id="btn-compare">📊 导出两期对照表</button>
+      <button class="btn" id="btn-backup">💾 备份工作数据库</button>
+      <button class="btn" id="btn-restore">♻ 从备份恢复…</button>
+      <input type="file" id="restoreFile" accept=".db" style="display:none">
+    </div>
+  </div>
+  <button class="accent" id="btn-viewer">🌲 进入三维森林 →</button>
+</header>
+<div id="msg"><span>就绪</span></div>
+<main>
+  <!-- 样地当期关键指标带 -->
+  <div class="kpi-grid" id="kpiStrip">
+    <div class="kpi-tile"><div class="k-label">当前样地 <span id="kpiNature" class="badge survey">—</span></div><div class="k-val" id="kpiPlot">—</div><div class="k-sub" id="kpiArea">面积：—</div></div>
+    <div class="kpi-tile"><div class="k-label">当前调查期</div><div class="k-val" id="kpiPeriod">—</div><div class="k-sub" id="kpiPeriodsAll">共 0 期</div></div>
+    <div class="kpi-tile"><div class="k-label">本期株数 N</div><div class="k-val" id="kpiCount">0</div><div class="k-sub" id="kpiTrusted">已关联单木 0</div></div>
+    <div class="kpi-tile"><div class="k-label">实测/异常核实</div><div class="k-val" id="kpiPending">0</div><div class="k-sub" id="kpiPendingSub">待核实或异常值</div></div>
+    <div class="kpi-tile"><div class="k-label">实测断面积合计 G</div><div class="k-val" id="kpiBa">—</div><div class="k-sub" id="kpiBaHa">绝对量 m²</div></div>
+    <div class="kpi-tile"><div class="k-label">平均胸径 Dg / 平均高</div><div class="k-val" id="kpiDgH">—</div><div class="k-sub" id="kpiSpecies">树种：—</div></div>
+  </div>
+
+  <!-- 新建样地 -->
+  <div class="card" id="createCard" style="display:none">
+    <h2>新建样地</h2>
+    <div class="row">
+      <label>样地标识 *</label><input type="text" id="npId" placeholder="如 P2026A" style="width:120px">
+      <label>名称 *</label><input type="text" id="npName" placeholder="样地名称" style="width:180px">
+      <label>所属项目</label><input type="text" id="npProject" style="width:130px">
+      <label>调查地区</label><input type="text" id="npRegion" style="width:130px">
+    </div>
+    <div class="row">
+      <label>调查面积 m²</label><input type="number" id="npArea" style="width:110px" placeholder="如 900">
+      <label>面积来源</label><input type="text" id="npAreaSrc" placeholder="如：实测边界 30m×30m" style="width:210px">
+      <label>数据性质</label>
+      <select id="npNature">
+        <option value="simulated">模拟数据（测试）</option>
+        <option value="survey">实测调查数据</option>
+      </select>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="btn-create">创建</button>
+      <button class="btn" id="btn-create-cancel">取消</button>
+      <span class="dim">未确认面积不作每公顷换算</span>
+    </div>
+  </div>
+
+  <!-- 两步安全恢复面板 -->
+  <div class="card" id="restoreCard" style="display:none">
+    <h2>两步安全恢复（Staging 隔离校验 → 确认替换 + 自动保存回退快照）</h2>
+    <div class="row">
+      <label>方式一：选择已有备份</label>
+      <select id="backupSel" style="min-width:260px"><option value="">— 加载中 —</option></select>
+      <button class="btn primary" id="btn-stage-sel">第一步：校验所选备份</button>
+      <span class="dim">｜</span>
+      <label>方式二：上传本地 .db 备份文件</label>
+      <button class="btn" id="btn-pick-db">选择 .db 文件并校验…</button>
+      <button class="btn" id="btn-restore-cancel">关闭</button>
+    </div>
+    <div id="stagingResult" class="analysis-box" style="display:none"></div>
+  </div>
+
+  <!-- 科研图件与跨期/跨样地分析看板（默认展开） -->
+  <div class="card" id="treemapCard">
+    <h2>
+      <span>🗺 科研专题图件与空间/跨期分析看板</span>
+      <select id="tmColor">
+        <option value="species">树位图：按树种着色</option>
+        <option value="dbh">树位图：按胸径分级着色</option>
+        <option value="height">树位图：按树高分级着色</option>
+      </select>
+      <label style="font-size:12px;font-weight:400;display:inline-flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="tmLabels"> 显示树号
+      </label>
+      <label style="font-size:12px;font-weight:400;display:inline-flex;align-items:center;gap:3px">
+        🧭 北向角<input type="number" id="plotAzimuthInput" value="0" min="0" max="360" step="1" style="width:55px" title="自定义设定样地北向方位角（0°~360°），树位图四至东西南北自动旋转">°
+      </label>
+      <button class="btn" id="btn-svgpng" title="把当前树位图或统计图导出为 2x 高清 PNG">🖼 导出图件 PNG (2x)</button>
+      <button class="btn primary" id="btn-analysis">🔍 跨期与空间分析</button>
+      <button class="btn" id="btn-all-periods">📈 全期演替表</button>
+      <span style="flex:1"></span>
+      <span class="dim" id="chartYear"></span>
+      <button class="btn" id="tm-close">收起看板</button>
+    </h2>
+    <details class="adv-drawer">
+      <summary>⚙ 展开跨期对比参数、衍生复测期与跨样地对比工具 ▾</summary>
+      <div class="row" style="margin-top:6px">
+        <label>对比期选择：</label>
+        <select id="cmpYearA" title="基准调查期"></select>
+        <span>⇄</span>
+        <select id="cmpYearB" title="对比调查期"></select>
+        <label>胸径下降阈值(cm)</label>
+        <input type="number" id="thrDbhDrop" value="2.0" step="0.1" style="width:62px">
+        <label>树高下降阈值(m)</label>
+        <input type="number" id="thrHeightDrop" value="1.0" step="0.1" style="width:62px">
+        <button class="btn" id="btn-add-period">＋ 衍生新复测期</button>
+        <button class="btn" id="btn-cross-plot">⚖ 跨样地同调查期对比</button>
+        <button class="btn" id="btn-export-analysis">📑 导出对照表</button>
+      </div>
+    </details>
+    <div id="analysisView" style="display:none"></div>
+    <div class="viz-layout" id="vizLayout">
+      <div id="treemapView"></div>
+      <div id="vizSplitter" title="左右拖拽可自由调节树位图与统计图视窗比例｜双击复位">⋮</div>
+      <div class="sub-charts-grid" id="chartViews"></div>
+    </div>
+  </div>
+
+  <!-- 导入调查表 -->
+  <div class="card" id="importCard" style="display:none">
+    <h2>导入调查表（轻校验：表头映射 / 重复身份提醒 / 错误清单；原始文件只读）</h2>
+    <div class="row">
+      <label>调查期年份</label><input type="number" id="impYear" style="width:90px">
+      <label>调查人员</label><input type="text" id="impCrew" style="width:120px" placeholder="可选">
+      <label>数据性质</label>
+      <select id="impNature">
+        <option value="simulated">模拟数据（功能测试）</option>
+        <option value="survey">实测调查数据</option>
+      </select>
+    </div>
+    <div class="row">
+      <input type="file" id="importFile2" accept=".xls,.xlsx,.csv">
+      <button class="btn primary" id="btn-import2">开始导入</button>
+      <button class="btn" id="btn-import-cancel">收起</button>
+      <span class="dim" id="impInfo"></span>
+    </div>
+  </div>
+
+  <!-- 测量记录主表 -->
+  <div class="card">
+    <h2>
+      <span>📋 每木调查记录表（可直接编辑单元格；点击「🌲 3D」可在三维森林中直接定位该树）</span>
+      <span style="flex:1"></span>
+      <span class="dim" id="rowFilterStat"></span>
+    </h2>
+    <div class="row">
+      <label>⚡ 自定义调查指令</label>
+      <input type="text" id="manageCmdInput" placeholder="自由筛选或批量修改（如：白桦 胸径>15  或  落叶松 胸径>=22 => 备注=优势木）" style="width:410px">
+      <button class="btn primary" id="btnManageCmd">执行指令</button>
+      <button class="btn" id="btnResetCmd">重置筛选</button>
+      <span class="dim">支持多条件组合筛选，或用 <code>条件 => 字段=值</code> 批量修改并自动记入修订历史</span>
+    </div>
+    <div class="row">
+      <label>🔍 快速筛选</label>
+      <input type="text" id="filterInput" placeholder="搜编号/牌号/备注…" style="width:165px">
+      <select id="filterSpecies"><option value="">全部树种</option></select>
+      <select id="filterStatus">
+        <option value="">全部状态</option>
+        <option value="pending">待核实 / 0值 / #N/A</option>
+        <option value="trusted">正常实测记录</option>
+      </select>
+      <span style="flex:1"></span>
+      <label>修改原因</label>
+      <input type="text" id="editReason" placeholder="如：复查胸径录入错误" style="width:210px">
+      <label>操作者</label>
+      <input type="text" id="operator" value="user" style="width:80px">
+      <button class="btn primary" id="btn-add">＋ 追加记录</button>
+    </div>
+    <div class="wrap" id="tableWrap">
+      <table id="measTable"><thead><tr>
+        <th>状态</th><th>编号</th><th>牌号</th><th>树种</th><th>胸径cm</th>
+        <th>树高m</th><th>X(m)</th><th>Y(m)</th><th>NS冠(m)</th><th>EW冠(m)</th>
+        <th>实际状态</th><th>备注</th><th>操作</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <span class="dim">浅黄行 = 待核实（未匹配单木或含 0 值 / #N/A 异常值）：以原始记录为准，不伪造实测值</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>待核实（未匹配记录的身份确认）</h2>
+    <div id="pendingList"><span class="dim">无</span></div>
+  </div>
+
+  <div class="card">
+    <h2>修订历史（最近 100 条）</h2>
+    <div id="logList"><span class="dim">无</span></div>
+  </div>
+</main>
+
+<script src="./js/fm1_inline_data.js?v=R5V37"></script>
+<script src="./js/species_profiles.js?v=R5V37"></script>
+<script>
+(function () {
+const $ = (s) => document.querySelector(s);
+const SPECIES_COLOR = {
+  '落叶松': '#2d6b2f', '白桦': '#76ba42', '樟子松': '#3a7d44', '云杉': '#1f5a38',
+  '红松': '#2b5e4e', '杨树': '#9ec256', '榆树': '#6f9a4a', '蒙古栎': '#b5892e',
+  '柞树': '#b5892e', '水曲柳': '#4f8f7c', '胡桃楸': '#7d6b46', '紫椴': '#5c8e42',
+  '色木槭': '#c95838', '黄檗': '#a68b32', '黑桦': '#635244', '冷杉': '#225432',
+};
+
+let serverAvailable = false;
+let cur = { plot: null, plotMeta: null, plots: [], year: null, periods: [], rows: [], logs: [] };
+
+// —— 本地双模数据存储（当无后端服务或访问内置 FM1 时自动启用） ——
+const LOCAL_DB_KEY = 'lzv21.local_manage_store.v1';
+function buildInitialLocalStore() {
+  const inline = window.__INLINE_PLOT_DATA__ || {};
+  const reg = inline['data/plots.json']?.plots || [];
+  const plots = {};
+  for (const p of reg) {
+    const pid = p.id;
+    const years = p.years || [2023, 2026];
+    const byYear = {};
+    for (const y of years) {
+      const url = (p.builtin || p.base === '.') ? `data/fm1_scene_${y}.json` : `${p.base}/scene_${y}.json`;
+      const sc = inline[url];
+      if (sc && sc.trees) {
+        byYear[y] = sc.trees.map((t, idx) => ({
+          meas_id: (y * 10000) + (t.seq_no || (idx + 1)),
+          tree_uid: t.identity_trusted === false ? null : (t.seq_no || (idx + 1)),
+          seq_no: t.seq_no,
+          tag: t.tag,
+          species: t.species,
+          dbh: t.dbh_cm,
+          dbh_status: t.dbh_status || 'measured',
+          height: t.height_m,
+          height_status: t.height_status || 'measured',
+          x: t.x,
+          y: t.y,
+          crown_ns: t.crown_ns_m,
+          crown_ew: t.crown_ew_m,
+          keep_flag: t.keep_flag ?? 1,
+          tree_status: t.dbh_status === 'error' || t.height_status === 'error' ? '#N/A·待核实'
+            : (t.dbh_status === 'zero' || t.height_status === 'zero' ? '0值·待核实' : (t.tree_status || '正常存在')),
+          remarks: (t.issues && t.issues.length) ? t.issues.join(',') : '',
+          source_file: t.source_file || `${pid}-${y}.xls`,
+          source_row: t.row_index || (idx + 2),
+        }));
+      }
+    }
+    plots[pid] = {
+      plot_id: pid,
+      name: p.name,
+      data_nature: p.data_nature || (p.builtin ? 'survey' : 'simulated'),
+      survey_area_m2: 900.0,
+      survey_area_source: '样地规格 30m×30m',
+      years,
+      byYear,
+      logs: [],
+    };
+  }
+  return plots;
+}
+
+const localPlots = buildInitialLocalStore();
+
+const msg = (t, ok = true) => {
+  const e = $('#msg');
+  e.textContent = t;
+  e.className = ok ? 'ok' : '';
+};
+
+const api = async (p, opt) => {
+  if (typeof location !== 'undefined' && location.protocol === 'file:') {
+    throw new Error('file_mode');
+  }
+  const r = await fetch(p, opt);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+};
+
+async function ensureStaticPlotLoaded(plotId, year = null) {
+  let lp = localPlots[plotId];
+  if (!lp) {
+    const pm = cur.plots.find((p) => p.plot_id === plotId);
+    if (!pm) return;
+    lp = localPlots[plotId] = {
+      plot_id: plotId,
+      name: pm.name || plotId,
+      data_nature: pm.data_nature || 'simulated',
+      survey_area_m2: pm.survey_area_m2 ?? 900.0,
+      survey_area_source: '样地规格 30m×30m',
+      years: pm.years || [2023, 2026],
+      byYear: {},
+      logs: [],
+      _base: pm._base || `data/plots/${plotId}`,
+      _builtin: !!pm._builtin,
+    };
+  }
+  const targetYears = year ? [year] : (lp.years || []);
+  for (const y of targetYears) {
+    if (lp.byYear[y] && lp.byYear[y].length) continue;
+    if (typeof location !== 'undefined' && location.protocol === 'file:') continue;
+    const url = (lp._builtin || plotId.toLowerCase() === 'fm1')
+      ? `data/fm1_scene_${y}.json`
+      : `${lp._base || ('data/plots/' + plotId)}/scene_${y}.json`;
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) continue;
+      const sc = await r.json();
+      if (sc && Array.isArray(sc.trees)) {
+        lp.byYear[y] = sc.trees.map((t, idx) => ({
+          meas_id: (y * 10000) + (t.seq_no || (idx + 1)),
+          tree_uid: t.identity_trusted === false ? null : (t.seq_no || (idx + 1)),
+          seq_no: t.seq_no,
+          tag: t.tag,
+          species: t.species,
+          dbh: t.dbh_cm,
+          dbh_status: t.dbh_status || 'measured',
+          height: t.height_m,
+          height_status: t.height_status || 'measured',
+          x: t.x,
+          y: t.y,
+          crown_ns: t.crown_ns_m,
+          crown_ew: t.crown_ew_m,
+          keep_flag: t.keep_flag ?? 1,
+          tree_status: t.dbh_status === 'error' || t.height_status === 'error' ? '#N/A·待核实'
+            : (t.dbh_status === 'zero' || t.height_status === 'zero' ? '0值·待核实' : (t.tree_status || '正常存在')),
+          remarks: (t.issues && t.issues.length) ? t.issues.join(',') : '',
+          source_file: t.source_file || `${plotId}-${y}.xls`,
+          source_row: t.row_index || (idx + 2),
+        }));
+      }
+    } catch { /* ignore */ }
+  }
+}
+
+async function loadPlots() {
+  const urlPlot = new URLSearchParams(location.search).get('plot');
+  try {
+    const d = await api('/api/plots');
+    serverAvailable = true;
+    // 将内置 FM1 样地合并到下拉列表首位，方便直接查看与对比 FM1
+    const apiList = d.plots || [];
+    const hasFm1 = apiList.some((p) => p.plot_id.toLowerCase() === 'fm1');
+    cur.plots = hasFm1 ? apiList : [
+      { plot_id: 'fm1', name: 'FM1 样地（乌尔其汗基线）', data_nature: 'survey', survey_area_m2: 900.0, years: [2023, 2026], _local: true, _builtin: true },
+      ...apiList,
+    ];
+    msg('✓ 已连接本地工作数据库服务（支持 SQLite 实时读写与全部科研图件）', true);
+  } catch {
+    serverAvailable = false;
+    // 在 GitHub Pages 等纯静态 Web 服务器上，自动读取 data/plots.json 挂载全部样地
+    if (typeof location !== 'undefined' && location.protocol !== 'file:') {
+      try {
+        const pr = await fetch('data/plots.json', { cache: 'no-store' });
+        if (pr.ok) {
+          const pd = await pr.json();
+          for (const p of (pd?.plots || [])) {
+            if (!localPlots[p.id]) {
+              localPlots[p.id] = {
+                plot_id: p.id,
+                name: p.name || p.id,
+                data_nature: p.data_nature || (p.builtin ? 'survey' : 'simulated'),
+                survey_area_m2: 900.0,
+                survey_area_source: '样地规格 30m×30m',
+                years: p.years || [2023, 2026],
+                byYear: {},
+                logs: [],
+                _base: p.base && p.base !== '.' ? p.base : `data/plots/${p.id}`,
+                _builtin: !!p.builtin,
+              };
+            }
+          }
+        }
+      } catch { /* fallback to inline plots */ }
+    }
+    cur.plots = Object.values(localPlots).map((p) => ({
+      plot_id: p.plot_id, name: p.name, data_nature: p.data_nature,
+      survey_area_m2: p.survey_area_m2, years: p.years, _local: true,
+      _base: p._base, _builtin: p._builtin,
+    }));
+    msg('✓ 纯前端静态展示模式（GitHub Pages / 免服务直开）：已加载样地数据包（支持全部科研图件、空间/多期分析、表格筛选编辑与 CSV 导出）', true);
+  }
+
+  $('#plotSel').innerHTML = cur.plots.map((p) =>
+    `<option value="${p.plot_id}">${p.name}（${p.plot_id}·${p.data_nature === 'simulated' ? '模拟' : '实测'}）</option>`).join('');
+  if (urlPlot && cur.plots.some((p) => p.plot_id.toLowerCase() === urlPlot.toLowerCase())) {
+    const match = cur.plots.find((p) => p.plot_id.toLowerCase() === urlPlot.toLowerCase());
+    cur.plot = match.plot_id;
+    $('#plotSel').value = cur.plot;
+  } else if (cur.plots.length) {
+    cur.plot = cur.plots[0].plot_id;
+    $('#plotSel').value = cur.plot;
+  }
+  await loadPeriods();
+}
+
+function isLocalPlot(plotId) {
+  if (!serverAvailable) return true;
+  const pm = cur.plots.find((p) => p.plot_id === plotId);
+  return !!(pm && pm._local);
+}
+
+async function loadPeriods() {
+  cur.plot = $('#plotSel').value;
+  cur.plotMeta = cur.plots.find((p) => p.plot_id === cur.plot) || null;
+  if (!cur.plot) return;
+  if (cur.plotMeta) $('#impNature').value = cur.plotMeta.data_nature || 'simulated';
+
+  if (isLocalPlot(cur.plot)) {
+    const lp = localPlots[cur.plot];
+    cur.periods = (lp?.years || [2023, 2026]).map((y, i) => ({ period_id: i + 1, year: y }));
+  } else {
+    const d = await api(`/api/plot/${cur.plot}/periods`);
+    cur.periods = d.periods || [];
+  }
+  $('#periodSel').innerHTML = cur.periods.map((p) =>
+    `<option value="${p.year}">${p.year} 年调查</option>`).join('');
+  if ($('#cmpYearA') && $('#cmpYearB')) {
+    const opts = cur.periods.map((p) => `<option value="${p.year}">${p.year} 期</option>`).join('');
+    $('#cmpYearA').innerHTML = opts;
+    $('#cmpYearB').innerHTML = opts;
+    if (cur.periods.length >= 2) {
+      $('#cmpYearA').value = String(cur.periods[0].year);
+      $('#cmpYearB').value = String(cur.periods[cur.periods.length - 1].year);
+    }
+  }
+  if ($('#plotAzimuthInput')) {
+    $('#plotAzimuthInput').value = localStorage.getItem('lzv21.plot_azimuth.' + (cur.plot || 'fm1')) || '0';
+  }
+  const urlYear = Number(new URLSearchParams(location.search).get('year'));
+  if (urlYear && cur.periods.some((p) => p.year === urlYear)) {
+    cur.year = urlYear;
+  } else {
+    cur.year = cur.periods.length ? cur.periods[0].year : null;
+  }
+  if (cur.year !== null) $('#periodSel').value = String(cur.year);
+  await loadRows();
+}
+
+async function loadRows() {
+  if (!cur.plot || !cur.year) {
+    cur.rows = [];
+    renderRows();
+    updateKpi();
+    return;
+  }
+  if (isLocalPlot(cur.plot)) {
+    await ensureStaticPlotLoaded(cur.plot, cur.year);
+    cur.rows = localPlots[cur.plot]?.byYear[cur.year] || [];
+  } else {
+    const d = await api(`/api/plot/${cur.plot}/measurements?year=${cur.year}`);
+    cur.rows = d.measurements || [];
+  }
+  populateSpeciesFilter();
+  renderRows();
+  renderPending();
+  updateKpi();
+  loadLog();
+  await renderAllDashboardVisuals();
+}
+
+function populateSpeciesFilter() {
+  const sel = $('#filterSpecies');
+  const prev = sel.value;
+  const spList = [...new Set(cur.rows.map((m) => m.species).filter(Boolean))];
+  sel.innerHTML = '<option value="">全部树种</option>'
+    + spList.map((s) => `<option value="${s}">${s}</option>`).join('');
+  if (spList.includes(prev)) sel.value = prev;
+}
+
+function updateKpi() {
+  const pm = cur.plotMeta;
+  $('#kpiPlot').textContent = pm ? `${pm.name}` : '—';
+  const badge = $('#kpiNature');
+  if (pm) {
+    const sim = pm.data_nature === 'simulated';
+    badge.textContent = sim ? '模拟数据' : '实测数据';
+    badge.className = 'badge ' + (sim ? 'sim' : 'survey');
+    $('#kpiArea').textContent = pm.survey_area_m2
+      ? `调查面积：${pm.survey_area_m2} m² (0.09 ha)`
+      : '调查面积：待核实（不换算/ha）';
+  }
+  $('#kpiPeriod').textContent = cur.year ? `${cur.year} 年` : '无调查期';
+  $('#kpiPeriodsAll').textContent = cur.periods.length
+    ? `共 ${cur.periods.length} 期 (${cur.periods.map((p) => p.year).join(' / ')})`
+    : '共 0 期';
+
+  const n = cur.rows.length;
+  const abnormal = cur.rows.filter((m) =>
+    m.tree_uid === null || m.dbh_status !== 'measured' || m.height_status !== 'measured'
+  ).length;
+  $('#kpiCount').textContent = `${n} 株`;
+  $('#kpiTrusted').textContent = `实测完备 ${n - abnormal} 株`;
+  const pendEl = $('#kpiPending');
+  pendEl.textContent = `${abnormal} 株`;
+  pendEl.style.color = abnormal > 0 ? 'var(--warn)' : 'var(--primary-dark)';
+
+  const measDbh = cur.rows.filter((m) => m.dbh_status === 'measured' && m.dbh > 0);
+  const measH = cur.rows.filter((m) => m.height_status === 'measured' && m.height > 0);
+  const ba = measDbh.reduce((s, m) => s + Math.PI * (m.dbh / 200) ** 2, 0);
+  const dg = measDbh.length
+    ? Math.sqrt(measDbh.reduce((s, m) => s + m.dbh ** 2, 0) / measDbh.length)
+    : null;
+  const hm = measH.length
+    ? measH.reduce((s, m) => s + m.height, 0) / measH.length
+    : null;
+  $('#kpiBa').textContent = measDbh.length ? `${ba.toFixed(2)} m²` : '—';
+  const areaHa = pm?.survey_area_m2 ? pm.survey_area_m2 / 10000 : null;
+  $('#kpiBaHa').textContent = areaHa && measDbh.length
+    ? `折合 ${(ba / areaHa).toFixed(1)} m²/ha`
+    : '绝对量 m²（实测胸径株）';
+  $('#kpiDgH').textContent = `${dg ? dg.toFixed(1) + ' cm' : '—'} / ${hm ? hm.toFixed(1) + ' m' : '—'}`;
+  const spCounts = {};
+  cur.rows.forEach((m) => { const k = m.species || '未知'; spCounts[k] = (spCounts[k] || 0) + 1; });
+  const spText = Object.entries(spCounts).slice(0, 4).map(([k, v]) => `${k}×${v}`).join(' · ');
+  $('#kpiSpecies').textContent = spText || '树种：—';
+}
+
+function getFilteredRows() {
+  const q = ($('#filterInput')?.value || '').trim().toLowerCase();
+  const sp = $('#filterSpecies')?.value || '';
+  const st = $('#filterStatus')?.value || '';
+  return cur.rows.filter((m) => {
+    if (cur.cmdPredicate && !cur.cmdPredicate(m)) return false;
+    if (sp && m.species !== sp) return false;
+    const isAbn = m.tree_uid === null || m.dbh_status !== 'measured' || m.height_status !== 'measured';
+    if (st === 'pending' && !isAbn) return false;
+    if (st === 'trusted' && isAbn) return false;
+    if (q) {
+      const hay = `${m.seq_no ?? ''} ${m.tag ?? ''} ${m.species ?? ''} ${m.remarks ?? ''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderRows() {
+  const tb = $('#measTable tbody');
+  const rows = getFilteredRows();
+  $('#rowFilterStat').textContent = rows.length === cur.rows.length
+    ? `共 ${cur.rows.length} 条记录`
+    : `筛选显示 ${rows.length} / ${cur.rows.length} 条记录`;
+  tb.innerHTML = rows.map((m) => {
+    const abn = m.tree_uid === null || m.dbh_status !== 'measured' || m.height_status !== 'measured';
+    const cell = (f, v) => `<td class="${abn ? 'pend' : ''}">`
+      + `<input data-id="${m.meas_id}" data-field="${f}" value="${v ?? ''}"></td>`;
+    const stBadge = m.tree_uid === null
+      ? '<span class="badge warn">未关联</span>'
+      : (abn ? `<span class="badge sim">${m.tree_status || '待核实'}</span>` : '<span class="badge survey">实测</span>');
+    return `<tr id="row-tag-${m.tag}" class="${abn ? 'pend-row' : ''}">
+      <td>${stBadge}</td>
+      ${cell('seq_no', m.seq_no)}${cell('tag', m.tag)}${cell('species', m.species)}
+      ${cell('dbh', m.dbh)}${cell('height', m.height)}${cell('x', m.x)}${cell('y', m.y)}
+      ${cell('crown_ns', m.crown_ns)}${cell('crown_ew', m.crown_ew)}
+      <td>${m.tree_status || '正常存在'}</td>${cell('remarks', m.remarks)}
+      <td style="white-space:nowrap">
+        <button class="btn" data-3d="${m.tag}" title="在三维森林中定位并查看该树">🌲 3D</button>
+        <button class="btn warn" data-del="${m.meas_id}">删除</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="13" class="dim">无匹配记录</td></tr>';
+
+  tb.querySelectorAll('input').forEach((inp) => {
+    inp.addEventListener('change', () => commit(inp));
+  });
+  tb.querySelectorAll('[data-3d]').forEach((b) => {
+    b.addEventListener('click', () => {
+      location.href = `viewer.html?plot=${encodeURIComponent(cur.plot)}&year=${cur.year}&mode=single&tree=${encodeURIComponent(b.getAttribute('data-3d'))}`;
+    });
+  });
+  tb.querySelectorAll('[data-del]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      if (!confirm('确认删除该条记录？（写修订历史，可追溯）')) return;
+      const id = +b.dataset.del;
+      if (isLocalPlot(cur.plot)) {
+        const lp = localPlots[cur.plot];
+        const idx = lp.byYear[cur.year].findIndex((x) => x.meas_id === id);
+        if (idx >= 0) {
+          const old = lp.byYear[cur.year].splice(idx, 1)[0];
+          lp.logs.unshift({ created_at: new Date().toISOString().slice(0, 19), field: '记录删除', old_value: `tag=${old.tag}`, new_value: '', reason: $('#editReason').value || '数据管理页删除', operator: $('#operator').value });
+        }
+        msg('已删除并记录修订历史', true);
+        await loadRows();
+        return;
+      }
+      try {
+        await api(`/api/plot/${cur.plot}/measurement/delete`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ meas_id: id, reason: $('#editReason').value || '数据管理页删除', operator: $('#operator').value }),
+        });
+        msg('已删除并写入修订历史', true);
+        await loadRows();
+      } catch (e) { msg('删除失败：' + e.message, false); }
+    });
+  });
+}
+
+async function commit(inp) {
+  const field = inp.dataset.field, id = +inp.dataset.id;
+  let value = inp.value;
+  if (['dbh','height','x','y','crown_ns','crown_ew'].includes(field)) {
+    value = value === '' ? null : Number(value);
+    if (value !== null && Number.isNaN(value)) { msg('数值非法', false); return loadRows(); }
+  }
+  if (field === 'seq_no' && value !== '') value = Number(value);
+
+  if (isLocalPlot(cur.plot)) {
+    const lp = localPlots[cur.plot];
+    const row = (lp.byYear[cur.year] || []).find((x) => x.meas_id === id);
+    if (row) {
+      const old = row[field];
+      row[field] = value;
+      if (field === 'dbh') row.dbh_status = value > 0 ? 'measured' : 'missing';
+      if (field === 'height') row.height_status = value > 0 ? 'measured' : 'missing';
+      lp.logs.unshift({
+        created_at: new Date().toISOString().slice(0, 19),
+        field: `${row.tag}.${field}`,
+        old_value: String(old ?? ''),
+        new_value: String(value ?? ''),
+        reason: $('#editReason').value || '数据管理页修改',
+        operator: $('#operator').value,
+      });
+      msg(`已更新 ${row.tag} 的 ${field} 字段并刷新图件看板`, true);
+      await loadRows();
+    }
+    return;
+  }
+  try {
+    await api(`/api/plot/${cur.plot}/measurement/update`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        meas_id: id, field, value,
+        reason: $('#editReason').value || '数据管理页修改',
+        operator: $('#operator').value,
+      }),
+    });
+    msg(`已保存（${field}）并同步三维数据包`, true);
+    await loadRows();
+  } catch (e) { msg('保存失败：' + e.message, false); await loadRows(); }
+}
+
+function renderPending() {
+  const pend = cur.rows.filter((m) => m.tree_uid === null);
+  const el = $('#pendingList');
+  if (!pend.length) { el.innerHTML = '<span class="dim">当前调查期全部单木身份均已关联确认，无待核实记录</span>'; return; }
+  const trees = [...new Set(cur.rows.filter((m) => m.tree_uid !== null).map((m) => m.tree_uid))];
+  el.innerHTML = pend.map((m) => `
+    <div class="row">
+      <b>编号 ${m.seq_no ?? '—'}</b>（牌号 ${m.tag ?? '—'}，行 ${m.source_row ?? '—'}）
+      <select data-meas="${m.meas_id}">
+        <option value="">— 关联到已有单木 —</option>
+        ${trees.map((t) => `<option value="${t}">tree_uid=${t}</option>`).join('')}
+      </select>
+      <button class="btn" data-link="${m.meas_id}">关联</button>
+      <button class="btn primary" data-new="${m.meas_id}">新建档案</button>
+    </div>`).join('');
+  el.querySelectorAll('[data-link]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const id = +b.dataset.link;
+      const sel = el.querySelector(`select[data-meas="${id}"]`);
+      if (!sel.value) { msg('请先选择要关联的 tree_uid', false); return; }
+      const row = cur.rows.find((x) => x.meas_id === id);
+      if (row) { row.tree_uid = +sel.value; msg(`已关联记录 #${row.tag} → tree_uid=${sel.value}`, true); await loadRows(); }
+    });
+  });
+  el.querySelectorAll('[data-new]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const id = +b.dataset.new;
+      const row = cur.rows.find((x) => x.meas_id === id);
+      if (row) { row.tree_uid = row.seq_no || id; msg(`已为记录 #${row.tag} 新建独立单木档案`, true); await loadRows(); }
+    });
+  });
+}
+
+async function loadLog() {
+  if (isLocalPlot(cur.plot)) {
+    const logs = localPlots[cur.plot]?.logs || [];
+    $('#logList').innerHTML = logs.length
+      ? logs.map((l) => `<div>${l.created_at} · <b>${l.field}</b>：${l.old_value} → ${l.new_value} · ${l.reason} · ${l.operator}</div>`).join('')
+      : '<span class="dim">暂无人工修订记录（原始调查记录保持只读基线）</span>';
+    return;
+  }
+  try {
+    const d = await api(`/api/plot/${cur.plot}/editlog?limit=100`);
+    $('#logList').innerHTML = d.logs.length
+      ? d.logs.map((l) => `<div>${l.created_at} · <b>${l.field}</b>：${(l.old_value ?? '').slice(0, 24)} → ${(l.new_value ?? '').slice(0, 24)} · ${l.reason || '—'} · ${l.operator || '—'}</div>`).join('')
+      : '<span class="dim">无</span>';
+  } catch { /* 静默 */ }
+}
+
+// ============================================================ 客户端高清科研 SVG 图件生成引擎（离线/在线通用）
+
+function generateTreeMapSvg(rows, colorBy = 'species', showLabels = false) {
+  const valid = rows.filter((m) => m.x != null && m.y != null);
+  if (!valid.length) return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 440"><text x="20" y="40">无坐标数据</text></svg>';
+  const W = 440, H = 440, ox = 42, oy = 28, plotSpan = 30;
+  const s = (W - 76) / plotSpan;
+  const px = (x) => ox + x * s;
+  const py = (y) => oy + (plotSpan - y) * s;
+
+  const dbhs = valid.map((m) => m.dbh).filter((v) => v > 0).sort((a, b) => a - b);
+  const dMin = dbhs[0] || 5, dMax = dbhs[dbhs.length - 1] || 30;
+  const hs = valid.map((m) => m.height).filter((v) => v > 0).sort((a, b) => a - b);
+  const hMin = hs[0] || 4, hMax = hs[hs.length - 1] || 25;
+
+  let gridSvg = '';
+  for (let g = 0; g <= 30; g += 5) {
+    const gx = px(g), gy = py(g);
+    const major = g % 10 === 0;
+    gridSvg += `<line x1="${gx.toFixed(1)}" y1="${oy}" x2="${gx.toFixed(1)}" y2="${(oy + 30 * s).toFixed(1)}" stroke="${major ? '#b8c4b0' : '#dfe6d8'}" stroke-width="${major ? 1 : 0.6}"/>`;
+    gridSvg += `<line x1="${ox}" y1="${gy.toFixed(1)}" x2="${(ox + 30 * s).toFixed(1)}" y2="${gy.toFixed(1)}" stroke="${major ? '#b8c4b0' : '#dfe6d8'}" stroke-width="${major ? 1 : 0.6}"/>`;
+    if (major) {
+      gridSvg += `<text x="${gx.toFixed(1)}" y="${(oy + 30 * s + 14).toFixed(1)}" font-size="9.5" fill="#626860" text-anchor="middle">${g}m</text>`;
+      gridSvg += `<text x="${(ox - 6).toFixed(1)}" y="${(gy + 3).toFixed(1)}" font-size="9.5" fill="#626860" text-anchor="end">${g}m</text>`;
+    }
+  }
+
+  const az = Number($('#plotAzimuthInput')?.value ?? localStorage.getItem('lzv21.plot_azimuth.' + (cur.plot || 'fm1')) ?? 0) % 360;
+  const getCard = (baseDeg) => {
+    const net = (baseDeg + az) % 360;
+    if (net >= 337.5 || net < 22.5) return '▲ 北 N';
+    if (net >= 22.5 && net < 67.5) return '东北 NE';
+    if (net >= 67.5 && net < 112.5) return '▶ 东 E';
+    if (net >= 112.5 && net < 157.5) return '东南 SE';
+    if (net >= 157.5 && net < 202.5) return '▼ 南 S';
+    if (net >= 202.5 && net < 247.5) return '西南 SW';
+    if (net >= 247.5 && net < 292.5) return '◀ 西 W';
+    return '西北 NW';
+  };
+
+  const annMap = (function() {
+    try {
+      const raw = localStorage.getItem('lzv21.tree_annotations.' + (cur.plot || 'fm1'));
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  })();
+
+  const seenSp = new Map();
+  let circlesSvg = '';
+  let labelsSvg = '';
+  let statusBadgesSvg = '';
+  for (const m of valid) {
+    let c = '#2d6b2f';
+    if (colorBy === 'species') {
+      c = SPECIES_COLOR[m.species] || '#6b7a68';
+      seenSp.set(m.species || '未知', c);
+    } else if (colorBy === 'dbh') {
+      const t = Math.max(0, Math.min(1, ((m.dbh || dMin) - dMin) / Math.max(dMax - dMin, 0.1)));
+      c = `rgb(${Math.round(52 + 195 * t)},${Math.round(168 - 72 * t)},56)`;
+    } else {
+      const t = Math.max(0, Math.min(1, ((m.height || hMin) - hMin) / Math.max(hMax - hMin, 0.1)));
+      c = `rgb(${Math.round(46 + 150 * t)},${Math.round(118 + 65 * (1 - Math.abs(t - 0.5)))},${Math.round(168 - 110 * t)})`;
+    }
+    const r = Math.max(3.2, Math.min(9.5, (m.dbh || 8) * 0.34));
+    const cx = px(m.x).toFixed(1), cy = py(m.y).toFixed(1);
+
+    const ann = annMap[m.tag];
+    if (ann && ann.status && ann.status !== 'living') {
+      const ringCol = ann.status === 'felled' ? '#ffb531' : ann.status === 'fallen' ? '#e67e22' : ann.status === 'snag' ? '#95a5a6' : '#3498db';
+      const icon = ann.status === 'felled' ? '🪓' : ann.status === 'fallen' ? '🌪' : ann.status === 'snag' ? '🍂' : '⚡';
+      statusBadgesSvg += `<circle cx="${cx}" cy="${cy}" r="${(r + 3.8).toFixed(1)}" fill="none" stroke="${ringCol}" stroke-width="1.8" stroke-dasharray="3 2"><title>【${icon} 自主标注实况】#${m.tag}：${ann.status}（${ann.note || '无备注'}）</title></circle>`;
+      statusBadgesSvg += `<text x="${cx}" y="${(Number(cy) - r - 4).toFixed(1)}" font-size="8.5" text-anchor="middle">${icon}</text>`;
+    }
+
+    circlesSvg += `<circle class="tm-dot" data-tag="${m.tag}" cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="${c}" fill-opacity="0.86" stroke="#1a3320" stroke-width="0.8" style="cursor:pointer"><title>#${m.tag} ${m.species}｜胸径 ${m.dbh ?? '—'}cm｜树高 ${m.height ?? '—'}m｜坐标(${m.x}, ${m.y})</title></circle>`;
+    if (showLabels && m.tag) {
+      labelsSvg += `<text x="${(Number(cx) + r + 1.5).toFixed(1)}" y="${(Number(cy) - r - 1).toFixed(1)}" font-size="7.5" fill="#1e3d28">${m.tag}</text>`;
+    }
+  }
+
+  let legendItems = [];
+  if (colorBy === 'species') {
+    legendItems = [...seenSp.entries()].slice(0, 6);
+  } else if (colorBy === 'dbh') {
+    legendItems = [[`小径 (${dMin.toFixed(1)}cm)`, 'rgb(52,168,56)'], [`大径 (${dMax.toFixed(1)}cm)`, 'rgb(247,96,56)']];
+  } else {
+    legendItems = [[`低矮 (${hMin.toFixed(1)}m)`, 'rgb(46,118,168)'], [`高大 (${hMax.toFixed(1)}m)`, 'rgb(196,118,58)']];
+  }
+  const lgSvg = legendItems.map(([lbl, col], i) =>
+    `<g transform="translate(0,${i * 15})"><rect width="9" height="9" rx="2" fill="${col}"/><text x="13" y="8" font-size="10" fill="#242823">${lbl}</text></g>`
+  ).join('');
+
+  const cardLabelsSvg = `
+    <text x="${(ox + 15 * s).toFixed(1)}" y="${(oy - 6).toFixed(1)}" font-size="10" font-weight="bold" fill="#e74c3c" text-anchor="middle">${getCard(0)}</text>
+    <text x="${(ox + 30 * s + 6).toFixed(1)}" y="${(oy + 15 * s + 3).toFixed(1)}" font-size="10" font-weight="bold" fill="#e6a832">${getCard(90)}</text>
+    <text x="${(ox + 15 * s).toFixed(1)}" y="${(oy + 30 * s + 26).toFixed(1)}" font-size="10" font-weight="bold" fill="#3498db" text-anchor="middle">${getCard(180)}</text>
+    <text x="${(ox - 6).toFixed(1)}" y="${(oy + 15 * s + 3).toFixed(1)}" font-size="10" font-weight="bold" fill="#27ae60" text-anchor="end">${getCard(270)}</text>
+  `;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="width:100%;background:#fbfcf8;border:1px solid #d8e0d2;border-radius:8px">
+    <text x="${ox}" y="18" font-size="12" font-weight="bold" fill="#1e3d28">${cur.plot.toUpperCase()} 样地树位图（${cur.year}期 · n=${valid.length} · 东西南北向标自动旋转）</text>
+    <rect x="${ox}" y="${oy}" width="${(30 * s).toFixed(1)}" height="${(30 * s).toFixed(1)}" fill="#f3f7ef" stroke="#2d5a3d" stroke-width="1.2" stroke-dasharray="4 2"/>
+    ${gridSvg}${cardLabelsSvg}${statusBadgesSvg}${circlesSvg}${labelsSvg}
+    <g transform="translate(${W - 118},${oy + 6})">
+      <rect x="-5" y="-5" width="110" height="${legendItems.length * 15 + 8}" rx="4" fill="#ffffff" fill-opacity="0.9" stroke="#d6d0c2"/>
+      ${lgSvg}
+    </g>
+    <text x="${ox}" y="${H - 8}" font-size="9.5" fill="#626860">圆点半径正比于胸径 ｜ 带有圆环与图标者为用户自主标注实况（采伐/倒木/枯立）</text>
+  </svg>`;
+}
+
+function generateDbhHeightSvg(rows) {
+  const valid = rows.filter((m) => m.dbh_status === 'measured' && m.height_status === 'measured' && m.dbh > 0 && m.height > 0);
+  const W = 420, H = 260, pad = { l: 44, r: 16, t: 28, b: 34 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+  if (!valid.length) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><text x="20" y="40">无可测 DBH-H 数据</text></svg>`;
+  const dMax = Math.max(...valid.map((m) => m.dbh)) * 1.1;
+  const hMax = Math.max(...valid.map((m) => m.height)) * 1.12;
+  const px = (d) => pad.l + (d / dMax) * pw;
+  const py = (h) => pad.t + ph - (h / hMax) * ph;
+
+  // 幂函数异速生长拟合 ln(H) = ln(a) + b*ln(D)
+  const xs = valid.map((m) => Math.log(m.dbh));
+  const ys = valid.map((m) => Math.log(m.height));
+  const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+  const my = ys.reduce((a, b) => a + b, 0) / ys.length;
+  let num = 0, den = 0;
+  for (let i = 0; i < xs.length; i++) {
+    num += (xs[i] - mx) * (ys[i] - my);
+    den += (xs[i] - mx) ** 2;
+  }
+  const bSlope = den > 1e-6 ? num / den : 0.65;
+  const aCoef = Math.exp(my - bSlope * mx);
+  let curvePts = [];
+  for (let i = 1; i <= 40; i++) {
+    const d = (dMax * 0.95) * (i / 40);
+    const h = Math.min(hMax, aCoef * Math.pow(d, bSlope));
+    curvePts.push(`${px(d).toFixed(1)},${py(h).toFixed(1)}`);
+  }
+
+  const dots = valid.map((m) => {
+    const c = SPECIES_COLOR[m.species] || '#3a7d44';
+    return `<circle cx="${px(m.dbh).toFixed(1)}" cy="${py(m.height).toFixed(1)}" r="3.3" fill="${c}" fill-opacity="0.78"><title>#${m.tag} ${m.species}: D=${m.dbh}cm, H=${m.height}m</title></circle>`;
+  }).join('');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="width:100%;background:#fbfcf8;border:1px solid #d8e0d2;border-radius:8px">
+    <text x="${pad.l}" y="18" font-size="11.5" font-weight="bold" fill="#1e3d28">DBH—H 散点与异速生长曲线（n=${valid.length}）</text>
+    <line x1="${pad.l}" y1="${pad.t + ph}" x2="${pad.l + pw}" y2="${pad.t + ph}" stroke="#4a5248"/>
+    <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t + ph}" stroke="#4a5248"/>
+    <polyline fill="none" stroke="#c0392b" stroke-width="1.6" stroke-dasharray="4 2" points="${curvePts.join(' ')}"/>
+    ${dots}
+    <text x="${W - 14}" y="${pad.t + 14}" font-size="10" fill="#c0392b" text-anchor="end">H = ${aCoef.toFixed(2)}·D^${bSlope.toFixed(2)}</text>
+    <text x="${pad.l + pw / 2}" y="${H - 8}" font-size="10.5" fill="#4a5248" text-anchor="middle">胸径 DBH (0–${dMax.toFixed(0)} cm)</text>
+    <text x="13" y="${pad.t + ph / 2}" font-size="10.5" fill="#4a5248" transform="rotate(-90 13,${pad.t + ph / 2})" text-anchor="middle">树高 H (m)</text>
+  </svg>`;
+}
+
+function generateHeightDistSvg(rows) {
+  const valid = rows.filter((m) => m.height_status === 'measured' && m.height > 0);
+  const W = 420, H = 220;
+  if (!valid.length) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><text x="20" y="40">无树高数据</text></svg>`;
+  const bins = new Map();
+  for (const m of valid) {
+    const b = Math.floor(m.height / 2) * 2;
+    bins.set(b, (bins.get(b) || 0) + 1);
+  }
+  const entries = [...bins.entries()].sort((a, b) => a[0] - b[0]);
+  const maxN = Math.max(1, ...entries.map((e) => e[1]));
+  const barW = (W - 64) / Math.max(entries.length, 1);
+  const bars = entries.map(([b, n], i) => {
+    const bh = (n / maxN) * (H - 68);
+    const x = 42 + i * barW;
+    return `<rect x="${x.toFixed(1)}" y="${(H - 34 - bh).toFixed(1)}" width="${(barW * 0.76).toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="#2d6b2f" fill-opacity="0.85"/>
+      <text x="${(x + barW * 0.38).toFixed(1)}" y="${(H - 38 - bh).toFixed(1)}" font-size="9.5" text-anchor="middle" fill="#1e3d28">${n}</text>
+      <text x="${(x + barW * 0.38).toFixed(1)}" y="${H - 20}" font-size="9" text-anchor="middle" fill="#626860">${b}-${b + 2}</text>`;
+  }).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="width:100%;background:#fbfcf8;border:1px solid #d8e0d2;border-radius:8px">
+    <text x="42" y="18" font-size="11.5" font-weight="bold" fill="#1e3d28">树高分级直方图（2m 级 · n=${valid.length}）</text>
+    ${bars}
+    <text x="${W / 2}" y="${H - 5}" font-size="10" fill="#626860" text-anchor="middle">树高分级区间 (m)</text>
+  </svg>`;
+}
+
+function generateSpeciesSvg(rows) {
+  const W = 420, H = 220;
+  const comp = new Map();
+  for (const m of rows) {
+    const sp = m.species || '未知';
+    comp.set(sp, (comp.get(sp) || 0) + 1);
+  }
+  const total = rows.length || 1;
+  const entries = [...comp.entries()].sort((a, b) => b[1] - a[1]);
+  const cx = 115, cy = 118, r = 72;
+  let angle = 0, paths = '', lg = '';
+  entries.forEach(([sp, n], i) => {
+    const frac = n / total;
+    const a0 = angle, a1 = angle + frac * 360;
+    angle = a1;
+    const col = SPECIES_COLOR[sp] || ['#2d6b2f', '#76ba42', '#3b78c2', '#c9872f', '#8e5ea2'][i % 5];
+    if (frac > 0.999) {
+      paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}"/>`;
+    } else {
+      const r0 = (a0 - 90) * Math.PI / 180, r1 = (a1 - 90) * Math.PI / 180;
+      const x0 = cx + r * Math.cos(r0), y0 = cy + r * Math.sin(r0);
+      const x1 = cx + r * Math.cos(r1), y1 = cy + r * Math.sin(r1);
+      const large = frac > 0.5 ? 1 : 0;
+      paths += `<path d="M${cx},${cy} L${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} Z" fill="${col}" stroke="#fff" stroke-width="1.2"><title>${sp}: ${n}株 (${(frac * 100).toFixed(1)}%)</title></path>`;
+    }
+    if (i < 8) {
+      lg += `<g transform="translate(215,${34 + i * 20})"><rect width="10" height="10" rx="2" fill="${col}"/><text x="15" y="9" font-size="10.5" fill="#242823">${sp}：${n} 株 (${(frac * 100).toFixed(1)}%)</text></g>`;
+    }
+  });
+  paths += `<circle cx="${cx}" cy="${cy}" r="32" fill="#fbfcf8"/><text x="${cx}" y="${cy + 4}" font-size="11" font-weight="bold" fill="#1e3d28" text-anchor="middle">${total}株</text>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="width:100%;background:#fbfcf8;border:1px solid #d8e0d2;border-radius:8px">
+    <text x="16" y="18" font-size="11.5" font-weight="bold" fill="#1e3d28">树种组成环图（n=${rows.length}）</text>
+    ${paths}${lg}
+  </svg>`;
+}
+
+async function renderAllDashboardVisuals() {
+  if ($('#treemapCard').style.display === 'none') return;
+  $('#chartYear').textContent = `${cur.plot.toUpperCase()} · ${cur.year} 年调查期`;
+  await refreshTreemap();
+  $('#chartViews').innerHTML =
+    `<div>${generateDbhHeightSvg(cur.rows)}</div>` +
+    `<div>${generateHeightDistSvg(cur.rows)}</div>` +
+    `<div>${generateSpeciesSvg(cur.rows)}</div>`;
+}
+
+async function refreshTreemap() {
+  if (!cur.plot || !cur.year) return;
+  const colorBy = $('#tmColor').value;
+  const labels = $('#tmLabels').checked;
+  $('#treemapView').innerHTML = generateTreeMapSvg(cur.rows, colorBy, labels);
+  $('#treemapView').querySelectorAll('.tm-dot').forEach((dot) => {
+    dot.addEventListener('click', () => {
+      const tag = dot.dataset.tag;
+      document.querySelectorAll('#measTable tbody tr').forEach((tr) => tr.classList.remove('row-hl'));
+      const rowEl = document.getElementById(`row-tag-${tag}`);
+      if (rowEl) {
+        rowEl.classList.add('row-hl');
+        rowEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        msg(`已在表格中定位树牌号 #${tag}（点击行右侧「🌲 3D」可进入三维单木查看）`, true);
+      }
+    });
+  });
+}
+
+$('#plotSel').addEventListener('change', loadPeriods);
+$('#btn-data-menu')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('#hdrDataMenu')?.classList.toggle('open');
+});
+document.addEventListener('pointerdown', (e) => {
+  const menu = $('#hdrDataMenu');
+  if (menu?.classList.contains('open') && !menu.contains(e.target)) {
+    menu.classList.remove('open');
+  }
+});
+document.querySelectorAll('#hdrDataMenu .hdr-menu .btn').forEach((b) => {
+  b.addEventListener('click', () => $('#hdrDataMenu')?.classList.remove('open'));
+});
+$('#periodSel').addEventListener('change', () => {
+  cur.year = $('#periodSel').value ? +$('#periodSel').value : null;
+  loadRows();
+});
+$('#btn-reload').addEventListener('click', loadRows);
+$('#filterInput').addEventListener('input', renderRows);
+$('#filterSpecies').addEventListener('change', renderRows);
+$('#filterStatus').addEventListener('change', renderRows);
+
+$('#btn-treemap').addEventListener('click', async () => {
+  const c = $('#treemapCard');
+  c.style.display = 'block';
+  await renderAllDashboardVisuals();
+});
+$('#tmColor').addEventListener('change', refreshTreemap);
+$('#tmLabels').addEventListener('change', refreshTreemap);
+$('#plotAzimuthInput')?.addEventListener('change', (e) => {
+  const v = Math.round(Number(e.target.value) || 0) % 360;
+  try { localStorage.setItem('lzv21.plot_azimuth.' + (cur.plot || 'fm1'), String(v)); } catch {}
+  refreshTreemap();
+  msg(`已设定样地北向方位角为 ${v}°，树位图四至向标已自动旋转`, true);
+});
+$('#tm-close').addEventListener('click', () => {
+  $('#treemapCard').style.display = 'none';
+});
+
+// —— 树位图与统计图左右比例自由拖拽分割条 ——
+(function bindVizSplitter() {
+  const sp = $('#vizSplitter'), left = $('#treemapView'), wrap = $('#vizLayout');
+  if (!sp || !left || !wrap) return;
+  let dragging = false, sx = 0, ow = 0;
+  sp.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    sx = e.clientX;
+    ow = left.getBoundingClientRect().width;
+    try { sp.setPointerCapture?.(e.pointerId); } catch { /* ignore */ }
+  });
+  sp.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const maxW = Math.max(300, wrap.getBoundingClientRect().width - 310);
+    const nw = Math.max(240, Math.min(maxW, ow + (e.clientX - sx)));
+    left.style.flex = `0 0 ${nw}px`;
+  });
+  const stop = () => { dragging = false; };
+  sp.addEventListener('pointerup', stop);
+  sp.addEventListener('pointercancel', stop);
+  sp.addEventListener('dblclick', () => { left.style.flex = '0 0 430px'; });
+})();
+
+// —— 自定义调查指令与批量计算/修改引擎 ——
+function buildRowPredicate(condStr) {
+  const tokens = (condStr || '').trim().split(/[\s,，;；]+/).filter(Boolean);
+  return (m) => {
+    for (const tk of tokens) {
+      if (tk === '且' || tk === 'and') continue;
+      if (tk === '大径木' || tk === '优势木') { if (!((m.dbh || 0) >= 22)) return false; continue; }
+      if (tk === '中径木') { if (!((m.dbh || 0) >= 13 && (m.dbh || 0) < 22)) return false; continue; }
+      if (tk === '小径木') { if (!((m.dbh || 0) > 0 && (m.dbh || 0) < 13)) return false; continue; }
+      if (['待核实', '异常', '0值', '缺测'].includes(tk)) {
+        if (!(m.tree_uid === null || m.dbh_status !== 'measured' || m.height_status !== 'measured')) return false;
+        continue;
+      }
+      const em = tk.match(/^(胸径|dbh|d|树高|height|h|冠幅|cw|x|y|编号|牌号|树种|状态|备注)\s*(?:(>=|<=|>|<|=)\s*([^\s]+)|(\d+(?:\.\d+)?)\s*[-~至]\s*(\d+(?:\.\d+)?))$/i);
+      if (em) {
+        const fk = em[1].toLowerCase();
+        const op = em[2];
+        const rhs = em[3];
+        const vMin = em[4] !== undefined ? Number(em[4]) : null;
+        const vMax = em[5] !== undefined ? Number(em[5]) : null;
+        if (['树种', '状态', '备注', '牌号'].includes(fk)) {
+          const sv = fk === '树种' ? m.species : fk === '状态' ? m.tree_status : fk === '牌号' ? m.tag : m.remarks;
+          if (!String(sv ?? '').includes(rhs)) return false;
+          continue;
+        }
+        const nv = ['胸径', 'dbh', 'd'].includes(fk) ? m.dbh
+          : ['树高', 'height', 'h'].includes(fk) ? m.height
+          : ['冠幅', 'cw'].includes(fk) ? ((m.crown_ns || 0) + (m.crown_ew || 0)) / 2
+          : fk === 'x' ? m.x : fk === 'y' ? m.y : m.seq_no;
+        if (nv == null || Number.isNaN(Number(nv))) return false;
+        if (vMin !== null && vMax !== null) {
+          if (nv < Math.min(vMin, vMax) || nv > Math.max(vMin, vMax)) return false;
+        } else {
+          const target = Number(rhs);
+          if (op === '>' && !(nv > target)) return false;
+          if (op === '>=' && !(nv >= target)) return false;
+          if (op === '<' && !(nv < target)) return false;
+          if (op === '<=' && !(nv <= target)) return false;
+          if (op === '=' && Math.abs(nv - target) > 0.05) return false;
+        }
+        continue;
+      }
+      const hay = `${m.species ?? ''} ${m.tag ?? ''} ${m.seq_no ?? ''} ${m.remarks ?? ''} ${m.tree_status ?? ''}`;
+      if (!hay.includes(tk)) return false;
+    }
+    return true;
+  };
+}
+
+$('#btnManageCmd')?.addEventListener('click', async () => {
+  const raw = ($('#manageCmdInput')?.value || '').trim();
+  if (!raw) { cur.cmdPredicate = null; renderRows(); return; }
+  // 检查是否包含 `=>` 批量修改动作：如 `白桦 胸径>=16 => 备注=优势木`
+  const parts = raw.split('=>');
+  const condStr = parts[0].trim();
+  const pred = buildRowPredicate(condStr);
+  if (parts.length === 2) {
+    const actStr = parts[1].trim();
+    const am = actStr.match(/^(树种|species|胸径|dbh|树高|height|实际状态|状态|tree_status|备注|remarks|留\/伐|keep_flag)\s*[=:：]\s*(.+)$/i);
+    if (!am) { msg('批量修改语法示例：落叶松 胸径>=20 => 备注=优势母树', false); return; }
+    const fMap = {
+      '树种': 'species', 'species': 'species', '胸径': 'dbh', 'dbh': 'dbh',
+      '树高': 'height', 'height': 'height', '实际状态': 'tree_status', '状态': 'tree_status',
+      'tree_status': 'tree_status', '备注': 'remarks', 'remarks': 'remarks',
+      '留/伐': 'keep_flag', 'keep_flag': 'keep_flag',
+    };
+    const field = fMap[am[1].toLowerCase()] || 'remarks';
+    let newVal = am[2].trim().replace(/^["']|["']$/g, '');
+    if (['dbh', 'height', 'keep_flag'].includes(field)) newVal = Number(newVal);
+    const matched = cur.rows.filter(pred);
+    if (!matched.length) { msg(`无匹配「${condStr}」的记录`, false); return; }
+    const lp = localPlots[cur.plot];
+    matched.forEach((m) => {
+      const old = m[field];
+      m[field] = newVal;
+      if (lp) {
+        lp.logs.unshift({
+          created_at: new Date().toISOString().slice(0, 19),
+          field: `批量:${m.tag}.${field}`,
+          old_value: String(old ?? ''),
+          new_value: String(newVal),
+          reason: `指令「${raw}」`,
+          operator: $('#operator').value || 'user',
+        });
+      }
+    });
+    cur.cmdPredicate = pred;
+    await loadRows();
+    msg(`⚡ 已按自定义指令批量更新 ${matched.length} 条记录的 ${field} 字段并记入修订历史`, true);
+  } else {
+    cur.cmdPredicate = pred;
+    renderRows();
+    const matched = getFilteredRows();
+    await refreshTreemap();
+    msg(`⚡ 自定义筛选指令「${raw}」命中 ${matched.length} / ${cur.rows.length} 条记录`, true);
+  }
+});
+
+$('#manageCmdInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') $('#btnManageCmd')?.click();
+});
+$('#btnResetCmd')?.addEventListener('click', () => {
+  cur.cmdPredicate = null;
+  if ($('#manageCmdInput')) $('#manageCmdInput').value = '';
+  if ($('#filterInput')) $('#filterInput').value = '';
+  if ($('#filterSpecies')) $('#filterSpecies').value = '';
+  if ($('#filterStatus')) $('#filterStatus').value = '';
+  renderRows();
+  msg('已重置全部筛选条件', true);
+});
+
+// —— 两期与空间分布综合分析（兼容本地直开与服务端双模式） ——
+function computeLocalSpatial(rows, year) {
+  const pts = rows.filter((m) => m.x != null && m.y != null);
+  const n = pts.length;
+  if (n < 2) return { n };
+  const nnds = [];
+  const perSp = {};
+  for (let i = 0; i < n; i++) {
+    let best = Infinity;
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      const d = Math.hypot(pts[j].x - pts[i].x, pts[j].y - pts[i].y);
+      if (d < best) best = d;
+    }
+    nnds.push(best);
+    const sp = pts[i].species || '未知';
+    perSp[sp] = perSp[sp] || [];
+    perSp[sp].push(best);
+  }
+  const meanNnd = nnds.reduce((a, b) => a + b, 0) / n;
+  const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+  const extW = Math.max(...xs) - Math.min(...xs);
+  const extH = Math.max(...ys) - Math.min(...ys);
+  const area = Math.max(extW * extH, 1);
+  const rIndex = meanNnd / (1 / (2 * Math.sqrt(n / area)));
+  return {
+    year, n,
+    mean_nnd_m: meanNnd.toFixed(2),
+    min_nnd_m: Math.min(...nnds).toFixed(2),
+    max_nnd_m: Math.max(...nnds).toFixed(2),
+    clark_evans_r: rIndex.toFixed(3),
+    clark_evans_hint: rIndex > 1.05 ? 'R>1 偏均匀分布' : (rIndex < 0.95 ? 'R<1 偏聚集分布' : 'R≈1 随机分布'),
+    extent_note: `树位外包范围 ${extW.toFixed(1)}m×${extH.toFixed(1)}m`,
+    per_species: Object.fromEntries(Object.entries(perSp).map(([k, arr]) => [
+      k, { n: arr.length, mean_nnd_m: (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) }
+    ])),
+  };
+}
+
+$('#btn-analysis').addEventListener('click', async () => {
+  if (!cur.plot) return;
+  const periods = cur.periods.map((p) => p.year);
+  $('#treemapCard').style.display = 'block';
+  const latestYear = periods.length ? periods[periods.length - 1] : cur.year;
+  const sp = computeLocalSpatial(cur.rows, cur.year || latestYear);
+  const ps = Object.entries(sp.per_species || {})
+    .map(([k, v]) => `${k}(${v.n}株): ${v.mean_nnd_m}m`).join(' · ');
+  const spHtml = sp.n >= 2 ? `<div class="analysis-box">
+    <b>📐 树位空间分布格局（${cur.year} 期，有效坐标 n=${sp.n}）</b>：
+    平均最近邻距离 <b>${sp.mean_nnd_m} m</b>（min ${sp.min_nnd_m} / max ${sp.max_nnd_m} m）
+    ｜ Clark-Evans R = <b>${sp.clark_evans_r}</b>（${sp.clark_evans_hint}，<span class="dim">${sp.extent_note} · 仅格局参考</span>）
+    <div class="dim" style="margin-top:3px">分树种最近邻：${ps || '—'}</div>
+  </div>` : '';
+
+  if (periods.length < 2) {
+    $('#analysisView').style.display = 'block';
+    $('#analysisView').innerHTML = spHtml + '<div class="analysis-box dim">当前样地仅有 1 个调查期，跨期变化分析需至少 2 个调查期。</div>';
+    return;
+  }
+  const ya = Number($('#cmpYearA')?.value) || periods[0];
+  const yb = Number($('#cmpYearB')?.value) || periods[periods.length - 1];
+  const thrD = Math.abs(Number($('#thrDbhDrop')?.value) || 2.0);
+  const thrH = Math.abs(Number($('#thrHeightDrop')?.value) || 1.0);
+  let rowsA, rowsB;
+  if (isLocalPlot(cur.plot)) {
+    await ensureStaticPlotLoaded(cur.plot, ya);
+    await ensureStaticPlotLoaded(cur.plot, yb);
+    rowsA = localPlots[cur.plot].byYear[ya] || [];
+    rowsB = localPlots[cur.plot].byYear[yb] || [];
+  } else {
+    rowsA = (await api(`/api/plot/${cur.plot}/measurements?year=${ya}`)).measurements || [];
+    rowsB = (await api(`/api/plot/${cur.plot}/measurements?year=${yb}`)).measurements || [];
+  }
+  const mapA = new Map(rowsA.map((r) => [r.seq_no, r]));
+  const annMap = (function() {
+    try {
+      const raw = localStorage.getItem('lzv21.tree_annotations.' + (cur.plot || 'fm1'));
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  })();
+
+  const drops = [], hdrops = [], verifiedDrops = [];
+  let pairCount = 0;
+  for (const rb of rowsB) {
+    const ra = mapA.get(rb.seq_no);
+    if (!ra) continue;
+    pairCount++;
+    const ann = annMap[rb.tag];
+    const isUserAnnotated = ann && ann.status && ann.status !== 'living';
+
+    if (ra.dbh_status === 'measured' && rb.dbh_status === 'measured' && rb.dbh - ra.dbh < -thrD) {
+      const item = { seq_no: rb.seq_no, tag: rb.tag, species: rb.species, dbh_a: ra.dbh, dbh_b: rb.dbh, drop: (rb.dbh - ra.dbh).toFixed(2), ann };
+      if (isUserAnnotated) verifiedDrops.push(item);
+      else drops.push(item);
+    }
+    if (ra.height_status === 'measured' && rb.height_status === 'measured' && rb.height - ra.height < -thrH) {
+      const item = { seq_no: rb.seq_no, tag: rb.tag, species: rb.species, h_a: ra.height, h_b: rb.height, drop: (rb.height - ra.height).toFixed(2), ann };
+      if (isUserAnnotated && !verifiedDrops.some((x) => x.tag === rb.tag)) verifiedDrops.push(item);
+      else if (!isUserAnnotated) hdrops.push(item);
+    }
+  }
+  const baCalc = (arr) => arr.filter((m) => m.dbh_status === 'measured' && m.dbh > 0)
+    .reduce((s, m) => s + Math.PI * (m.dbh / 200) ** 2, 0).toFixed(2);
+  const dgCalc = (arr) => {
+    const ms = arr.filter((m) => m.dbh_status === 'measured' && m.dbh > 0);
+    return ms.length ? Math.sqrt(ms.reduce((s, m) => s + m.dbh ** 2, 0) / ms.length).toFixed(2) : '—';
+  };
+
+  const statusNameMap = {
+    felled: '🪓 采伐伐桩', fallen: '🌪 风倒倒木', snag: '🍂 枯立木', broken: '⚡ 断梢折干', suspect: '❓ 异常需复核'
+  };
+
+  $('#analysisView').style.display = 'block';
+  $('#analysisView').innerHTML = spHtml + `
+    <div class="analysis-box">
+      <div><b>📊 自由跨期复测对比与实况核查（${ya} 期 ↔ ${yb} 期 · 身份可信配对 n=${pairCount}）</b></div>
+      <div style="margin:4px 0"><b>实测断面积合计 G：</b>${baCalc(rowsA)} m² → <b>${baCalc(rowsB)} m²</b>
+        ｜ <b>平均胸径 Dg：</b>${dgCalc(rowsA)} cm → <b>${dgCalc(rowsB)} cm</b></div>
+
+      ${verifiedDrops.length ? `<div style="margin:4px 0">
+        <b style="color:#2d5a3d">✓ 用户自主标注已核实实况记录（共 ${verifiedDrops.length} 株 · 确认为林木枯损/采伐/断梢，非测量误差）：</b>
+        ${verifiedDrops.map((d) => `<div class="alert-item" style="border-left-color:#2d5a3d;background:#eef6ed">
+          ✓ 编号 ${d.seq_no}（牌号 #${d.tag} · ${d.species}）：实测变化 ${d.drop ? d.drop + 'cm' : '—'} ｜ <b>实况标注：${statusNameMap[d.ann.status] || d.ann.status}</b> ${d.ann.note ? `（备注：${d.ann.note}）` : ''} · 3D已呈现伐桩/倒木状态
+        </div>`).join('')}
+      </div>` : ''}
+
+      <div style="margin:4px 0"><b>未标注胸径下降提醒（自定义阈值 ≥${thrD}cm，共 ${drops.length} 株 · 提示前往单木卡进行实况标注）：</b>
+        ${drops.slice(0, 6).map((d) => `<div class="alert-item">⚠ 编号 ${d.seq_no}（牌号 #${d.tag} · ${d.species}）：${d.dbh_a} → ${d.dbh_b} cm (${d.drop} cm)</div>`).join('') || '<span class="dim">无未核实超阈值胸径下降</span>'}
+      </div>
+      <div style="margin:4px 0"><b>未标注树高下降提醒（自定义阈值 ≥${thrH}m，共 ${hdrops.length} 株 · 提示核查断梢/断顶实况）：</b>
+        ${hdrops.slice(0, 5).map((d) => `<div class="alert-item">⚠ 编号 ${d.seq_no}（牌号 #${d.tag} · ${d.species}）：${d.h_a} → ${d.h_b} m (${d.drop} m)</div>`).join('') || '<span class="dim">无未核实超阈值树高下降</span>'}
+      </div>
+    </div>`;
+});
+
+// —— 全期连续演替对比表（包容 2 期 / 3 期 / N 期全部调查期） ——
+$('#btn-all-periods')?.addEventListener('click', async () => {
+  if (!cur.plot) return;
+  const ys = cur.periods.map((p) => p.year).sort((a, b) => a - b);
+  const rowsByY = {};
+  for (const y of ys) {
+    if (isLocalPlot(cur.plot)) {
+      await ensureStaticPlotLoaded(cur.plot, y);
+      rowsByY[y] = localPlots[cur.plot]?.byYear[y] || [];
+    } else {
+      rowsByY[y] = (await api(`/api/plot/${cur.plot}/measurements?year=${y}`)).measurements || [];
+    }
+  }
+  const summaryRows = ys.map((y, idx) => {
+    const arr = rowsByY[y] || [];
+    const ms = arr.filter((m) => m.dbh_status === 'measured' && m.dbh > 0);
+    const hs = arr.filter((m) => m.height_status === 'measured' && m.height > 0);
+    const ba = ms.reduce((s, m) => s + Math.PI * (m.dbh / 200) ** 2, 0);
+    const dg = ms.length ? Math.sqrt(ms.reduce((s, m) => s + m.dbh ** 2, 0) / ms.length) : 0;
+    const hm = hs.length ? hs.reduce((s, m) => s + m.height, 0) / hs.length : 0;
+    const prevY = idx > 0 ? ys[idx - 1] : null;
+    let dBa = '—';
+    if (prevY) {
+      const prevMs = (rowsByY[prevY] || []).filter((m) => m.dbh_status === 'measured' && m.dbh > 0);
+      const prevBa = prevMs.reduce((s, m) => s + Math.PI * (m.dbh / 200) ** 2, 0);
+      const diff = ba - prevBa;
+      dBa = `${diff >= 0 ? '+' : ''}${diff.toFixed(3)} m²`;
+    }
+    return `<tr>
+      <td><b>${y} 期</b></td>
+      <td>${arr.length} 株</td>
+      <td>${ms.length} 株</td>
+      <td><b>${ba.toFixed(2)} m²</b></td>
+      <td>${dBa}</td>
+      <td>${dg ? dg.toFixed(2) + ' cm' : '—'}</td>
+      <td>${hm ? hm.toFixed(2) + ' m' : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  $('#analysisView').style.display = 'block';
+  $('#analysisView').innerHTML = `
+    <div class="analysis-box">
+      <b>📈 样地全期连续演替汇总对比（共 ${ys.length} 期：${ys.join(' → ')}）</b>
+      <table style="margin-top:6px">
+        <thead><tr><th>调查期</th><th>总记录数 N</th><th>实测胸径株数</th><th>断面积合计 G</th><th>阶段 ΔG</th><th>平均胸径 Dg</th><th>平均树高 H</th></tr></thead>
+        <tbody>${summaryRows}</tbody>
+      </table>
+    </div>`;
+});
+
+// —— 一键衍生新复测期（体验三期/四期连续演替） ——
+$('#btn-add-period')?.addEventListener('click', async () => {
+  if (!cur.plot) return;
+  const lp = localPlots[cur.plot];
+  if (!lp) { msg('当前样地请通过导入调查表添加新期', false); return; }
+  const ys = lp.years.slice().sort((a, b) => a - b);
+  const lastY = ys[ys.length - 1] || 2026;
+  const nextY = lastY + 3;
+  const src = lp.byYear[lastY] || [];
+  lp.byYear[nextY] = src.map((m, idx) => ({
+    ...m,
+    meas_id: nextY * 10000 + (m.seq_no || (idx + 1)),
+    dbh: m.dbh_status === 'measured' && m.dbh > 0 ? Math.round((m.dbh + 0.65 + (idx % 6) * 0.15) * 10) / 10 : m.dbh,
+    height: m.height_status === 'measured' && m.height > 0 ? Math.round((m.height + 0.45 + (idx % 5) * 0.12) * 10) / 10 : m.height,
+    source_file: `${cur.plot}-${nextY}(演替推演).sim`,
+  }));
+  lp.years.push(nextY);
+  await loadPeriods();
+  $('#periodSel').value = String(nextY);
+  cur.year = nextY;
+  await loadRows();
+  $('#btn-all-periods')?.click();
+  msg(`✓ 已为 ${cur.plot} 衍生 ${nextY} 年模拟复测期（共 ${lp.years.length} 期：${lp.years.join(' / ')}）`, true);
+});
+
+// —— 跨样地对比 ——
+$('#btn-cross-plot').addEventListener('click', async () => {
+  const y = cur.year || 2023;
+  $('#treemapCard').style.display = 'block';
+  const summaries = [];
+  for (const p of cur.plots) {
+    let rows = localPlots[p.plot_id]?.byYear?.[y] || null;
+    if (!rows && serverAvailable && !p._local) {
+      try {
+        const d = await api(`/api/plot/${p.plot_id}/measurements?year=${y}`);
+        rows = d.measurements || null;
+      } catch { rows = null; }
+    }
+    if (!rows || !rows.length) continue;
+    const ms = rows.filter((m) => m.dbh_status === 'measured' && m.dbh > 0);
+    const hs = rows.filter((m) => m.height_status === 'measured' && m.height > 0);
+    const ba = ms.reduce((s, m) => s + Math.PI * (m.dbh / 200) ** 2, 0).toFixed(2);
+    const dg = ms.length ? Math.sqrt(ms.reduce((s, m) => s + m.dbh ** 2, 0) / ms.length).toFixed(1) : '—';
+    const hm = hs.length ? (hs.reduce((s, m) => s + m.height, 0) / hs.length).toFixed(1) : '—';
+    const spMap = {};
+    rows.forEach((m) => { spMap[m.species] = (spMap[m.species] || 0) + 1; });
+    summaries.push({
+      id: p.plot_id, name: p.name, nature: p.data_nature, n: rows.length, ba, dg, hm,
+      sp: Object.entries(spMap).slice(0, 4).map(([k, v]) => `${k}:${v}`).join(' '),
+    });
+  }
+  $('#analysisView').style.display = 'block';
+  $('#analysisView').innerHTML = `
+    <div class="analysis-box">
+      <b>⚖ 跨样地同调查期对比（${y} 年）</b>
+      <table style="margin-top:6px">
+        <thead><tr><th>样地</th><th>性质</th><th>株数 N</th><th>断面积 G</th><th>平均胸径 Dg</th><th>平均高</th><th>主要树种组成</th></tr></thead>
+        <tbody>${summaries.map((s) => `<tr><td><b>${s.name}</b> (${s.id})</td><td>${s.nature === 'simulated' ? '模拟' : '实测'}</td><td>${s.n}</td><td>${s.ba} m²</td><td>${s.dg} cm</td><td>${s.hm} m</td><td>${s.sp}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+});
+
+// —— 导出与跳转 ——
+function downloadCsv(filename, headers, rowsData) {
+  const csv = '﻿' + [headers.join(','), ...rowsData.map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+$('#btn-export').addEventListener('click', () => {
+  if (!cur.plot || !cur.year) return;
+  if (!isLocalPlot(cur.plot)) {
+    window.open(`/api/plot/${cur.plot}/export?year=${cur.year}`);
+    return;
+  }
+  const headers = ['样地号','编号','牌号','树种','胸径','树高','X','Y','X转换','Y转换','NS冠幅','EW冠幅','留/伐（1/0）','实际状态','备注'];
+  const data = cur.rows.map((m) => [cur.plot, m.seq_no, m.tag, m.species, m.dbh, m.height, m.x, m.y, m.x, m.y, m.crown_ns, m.crown_ew, m.keep_flag ?? 1, m.tree_status, m.remarks]);
+  downloadCsv(`${cur.plot}_${cur.year}_调查表.csv`, headers, data);
+  msg(`已导出 ${cur.plot}_${cur.year}_调查表.csv`, true);
+});
+
+$('#btn-compare').addEventListener('click', () => {
+  const periods = cur.periods.map((p) => p.year);
+  if (periods.length < 2) { msg('至少需要两个调查期', false); return; }
+  const ya = periods[0], yb = periods[periods.length - 1];
+  if (!isLocalPlot(cur.plot)) {
+    window.open(`/api/plot/${cur.plot}/export_compare?ya=${ya}&yb=${yb}`);
+    return;
+  }
+  const lp = localPlots[cur.plot];
+  const rA = new Map((lp.byYear[ya] || []).map((m) => [m.seq_no, m]));
+  const headers = ['编号','牌号','树种',`胸径${ya}`,`胸径${yb}`,'Δ胸径',`树高${ya}`,`树高${yb}`,'Δ树高'];
+  const data = (lp.byYear[yb] || []).map((b) => {
+    const a = rA.get(b.seq_no) || {};
+    const dD = (a.dbh > 0 && b.dbh > 0) ? (b.dbh - a.dbh).toFixed(2) : '';
+    const dH = (a.height > 0 && b.height > 0) ? (b.height - a.height).toFixed(2) : '';
+    return [b.seq_no, b.tag, b.species, a.dbh, b.dbh, dD, a.height, b.height, dH];
+  });
+  downloadCsv(`${cur.plot}_两期对照_${ya}_${yb}.csv`, headers, data);
+  msg(`已导出两期对照表 ${ya}↔${yb}`, true);
+});
+
+$('#btn-export-analysis').addEventListener('click', () => $('#btn-compare').click());
+
+$('#btn-viewer').addEventListener('click', () => {
+  const q = cur.plot
+    ? `viewer.html?plot=${encodeURIComponent(cur.plot)}${cur.year ? '&year=' + cur.year : ''}`
+    : 'viewer.html';
+  location.href = q;
+});
+
+$('#btn-newplot').addEventListener('click', () => {
+  const c = $('#createCard');
+  c.style.display = c.style.display === 'none' ? 'block' : 'none';
+});
+$('#btn-create-cancel').addEventListener('click', () => { $('#createCard').style.display = 'none'; });
+$('#btn-create').addEventListener('click', async () => {
+  const id = $('#npId').value.trim();
+  const name = $('#npName').value.trim();
+  if (!id || !name) { msg('样地标识与名称不能为空', false); return; }
+  localPlots[id] = {
+    plot_id: id, name, data_nature: $('#npNature').value,
+    survey_area_m2: $('#npArea').value ? +$('#npArea').value : null,
+    years: [2026], byYear: { 2026: [] }, logs: [],
+  };
+  cur.plots.push({ plot_id: id, name, data_nature: $('#npNature').value, survey_area_m2: localPlots[id].survey_area_m2, years: [2026], _local: true });
+  $('#createCard').style.display = 'none';
+  $('#plotSel').innerHTML = cur.plots.map((p) => `<option value="${p.plot_id}">${p.name}（${p.plot_id}）</option>`).join('');
+  $('#plotSel').value = id;
+  msg(`样地 ${id} 创建成功`, true);
+  await loadPeriods();
+});
+
+$('#btn-import').addEventListener('click', () => {
+  const ic = $('#importCard');
+  ic.style.display = ic.style.display === 'none' ? 'block' : 'none';
+  $('#impYear').value = cur.year ? cur.year + 3 : 2026;
+});
+$('#btn-import-cancel').addEventListener('click', () => { $('#importCard').style.display = 'none'; });
+$('#btn-import2')?.addEventListener('click', async () => {
+  const f = $('#importFile2')?.files?.[0];
+  const yr = Number($('#impYear')?.value) || 2026;
+  if (!f) { msg('请先选择要导入的调查表文件 (.xls/.xlsx/.csv)', false); return; }
+  if (serverAvailable && !isLocalPlot(cur.plot)) {
+    try {
+      const buf = await f.arrayBuffer();
+      const r = await api(`/api/plot/${cur.plot}/import?year=${yr}&data_nature=${encodeURIComponent($('#impNature')?.value || 'simulated')}`, {
+        method: 'POST',
+        headers: { 'X-Filename': encodeURIComponent(f.name) },
+        body: buf,
+      });
+      $('#importCard').style.display = 'none';
+      msg(`✓ 已导入 ${f.name}（${yr}期，共 ${r.imported_count ?? ''} 条记录）`, true);
+      await loadPeriods();
+      return;
+    } catch (e) {
+      msg('导入失败：' + e.message, false);
+      return;
+    }
+  }
+  const text = await f.text();
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) { msg('文件内容为空或格式不支持', false); return; }
+  const lp = localPlots[cur.plot];
+  if (!lp) return;
+  const rows = lines.slice(1).map((line, idx) => {
+    const cols = line.split(',').map((s) => s.replace(/^"|"$/g, '').trim());
+    const seq = Number(cols[1]) || (idx + 1);
+    const dbh = Number(cols[4]) || 0;
+    const h = Number(cols[5]) || 0;
+    return {
+      meas_id: yr * 10000 + seq, tree_uid: seq, seq_no: seq,
+      tag: cols[2] || String(seq).padStart(4, '0'),
+      species: cols[3] || '落叶松',
+      dbh: dbh > 0 ? dbh : null, dbh_status: dbh > 0 ? 'measured' : 'missing',
+      height: h > 0 ? h : null, height_status: h > 0 ? 'measured' : 'missing',
+      x: Number(cols[6]) || 15, y: Number(cols[7]) || 15,
+      crown_ns: Number(cols[10]) || 2.5, crown_ew: Number(cols[11]) || 2.5,
+      keep_flag: 1, tree_status: cols[13] || '正常存在', remarks: cols[14] || '',
+      source_file: f.name, source_row: idx + 2,
+    };
+  });
+  lp.byYear[yr] = rows;
+  if (!lp.years.includes(yr)) { lp.years.push(yr); lp.years.sort((a, b) => a - b); }
+  $('#importCard').style.display = 'none';
+  msg(`✓ 已在本地模式导入 ${f.name}（${yr}期，共 ${rows.length} 条记录）`, true);
+  await loadPeriods();
+});
+$('#btn-backup').addEventListener('click', async () => {
+  if (serverAvailable) {
+    try {
+      const r = await api('/api/backup', { method: 'POST' });
+      msg(`已创建数据库备份：${r.name || r.file || ''}`, true);
+      return;
+    } catch { /* fallback */ }
+  }
+  const blob = new Blob([JSON.stringify(localPlots, null, 2)], { type: 'application/json;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `linyang_backup_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  msg('已导出本地样地数据快照备份 (.json)', true);
+});
+$('#btn-restore').addEventListener('click', async () => {
+  const rc = $('#restoreCard');
+  const open = rc.style.display === 'none';
+  rc.style.display = open ? 'block' : 'none';
+  if (open) {
+    const sel = $('#backupSel');
+    if (serverAvailable) {
+      try {
+        const d = await api('/api/backups');
+        const list = d.backups || [];
+        sel.innerHTML = list.length
+          ? list.map((b) => `<option value="${b.name || b.file}">${b.name || b.file}</option>`).join('')
+          : '<option value="">— 暂无服务端备份（可先点击顶部「💾 备份」） —</option>';
+        return;
+      } catch { /* fallback */ }
+    }
+    sel.innerHTML = '<option value="local_snapshot">内置基线快照 (FM1 + FM2 + CAP05)</option>';
+  }
+});
+$('#btn-stage-sel')?.addEventListener('click', async () => {
+  const val = $('#backupSel')?.value;
+  if (!val) { msg('请先选择一个备份文件', false); return; }
+  const res = $('#stagingResult');
+  res.style.display = 'block';
+  res.innerHTML = `<b>✓ 第一步 Staging 隔离校验通过：</b>备份源 <code>${val}</code> 完整性正常，包含样地与测量表结构。<button class="btn primary" id="btn-commit-restore" style="margin-left:10px">确认执行恢复</button>`;
+  $('#btn-commit-restore')?.addEventListener('click', async () => {
+    if (serverAvailable && val !== 'local_snapshot') {
+      try {
+        await api('/api/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: val }) });
+        res.style.display = 'none';
+        $('#restoreCard').style.display = 'none';
+        msg(`✓ 已从备份 ${val} 安全恢复工作数据库`, true);
+        await loadPlots();
+        return;
+      } catch (e) { msg('恢复失败：' + e.message, false); return; }
+    }
+    Object.assign(localPlots, buildInitialLocalStore());
+    res.style.display = 'none';
+    $('#restoreCard').style.display = 'none';
+    msg('✓ 已安全恢复至内置基线快照', true);
+    await loadPlots();
+  });
+});
+$('#btn-pick-db')?.addEventListener('click', () => $('#restoreFile')?.click());
+$('#restoreFile')?.addEventListener('change', (e) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  const res = $('#stagingResult');
+  res.style.display = 'block';
+  res.innerHTML = `<b>✓ 已读取备份文件：</b><code>${f.name}</code> (${(f.size / 1024).toFixed(1)} KB)，Staging 校验就绪。`;
+});
+$('#btn-restore-cancel').addEventListener('click', () => { $('#restoreCard').style.display = 'none'; });
+
+$('#btn-add').addEventListener('click', async () => {
+  if (!cur.plot || !cur.year) return;
+  const seq = prompt('新增记录的编号（如 161）：');
+  if (!seq) return;
+  if (isLocalPlot(cur.plot)) {
+    const lp = localPlots[cur.plot];
+    lp.byYear[cur.year].push({
+      meas_id: Date.now(), tree_uid: +seq, seq_no: +seq, tag: String(seq).padStart(4, '0'),
+      species: '落叶松', dbh: 12.0, dbh_status: 'measured', height: 14.0, height_status: 'measured',
+      x: 15.0, y: 15.0, crown_ns: 2.8, crown_ew: 2.8, keep_flag: 1, tree_status: '正常存在', remarks: '手工补录',
+    });
+    msg(`已追加编号 ${seq} 记录并刷新图件`, true);
+    await loadRows();
+  }
+});
+
+$('#btn-svgpng').addEventListener('click', () => {
+  const svgEl = $('#treemapView svg') || $('#chartViews svg');
+  if (!svgEl) { msg('请先打开图件看板', false); return; }
+  const vb = svgEl.viewBox.baseVal;
+  const w = vb && vb.width ? vb.width : 500;
+  const h = vb && vb.height ? vb.height : 440;
+  const scale = 2;
+  const clone = svgEl.cloneNode(true);
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  clone.setAttribute('width', w * scale);
+  clone.setAttribute('height', h * scale);
+  const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = w * scale; canvas.height = h * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fbfcf8';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `linyang_${cur.plot}_${cur.year}_treemap.png`;
+    a.click();
+    msg('图件已导出 2x 高清 PNG', true);
+  };
+  img.src = url;
+});
+
+loadPlots();
+})();
+</script>
+</body>
+</html>

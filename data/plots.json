@@ -1,0 +1,449 @@
+{
+  "version": 1,
+  "plots": [
+    {
+      "id": "fm1",
+      "name": "FM1 样地",
+      "years": [
+        2023,
+        2026
+      ],
+      "base": ".",
+      "tree_count": 160,
+      "builtin": true
+    },
+    {
+      "id": "FM2",
+      "name": "二号样地（模拟）",
+      "data_nature": "simulated",
+      "years": [
+        2023,
+        2026
+      ],
+      "base": "data/plots/FM2",
+      "tree_count": 160,
+      "imported_at": "2026-11-03T02:19:29"
+    },
+    {
+      "id": "DEMO1",
+      "name": "演示样地（模拟·任意年份）",
+      "years": [
+        2030,
+        2033
+      ],
+      "base": "data/plots/DEMO1",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T03:23:03"
+    },
+    {
+      "id": "DEMO2",
+      "name": "三期复测验证样地",
+      "years": [
+        2030,
+        2033,
+        2036
+      ],
+      "base": "data/plots/DEMO2",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:03:36"
+    },
+    {
+      "id": "CAP01",
+      "name": "容量测试样地01",
+      "years": [
+        2018
+      ],
+      "base": "data/plots/CAP01",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:03"
+    },
+    {
+      "id": "CAP02",
+      "name": "容量测试样地02",
+      "years": [
+        2025,
+        2028
+      ],
+      "base": "data/plots/CAP02",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:03"
+    },
+    {
+      "id": "CAP03",
+      "name": "容量测试样地03",
+      "years": [
+        2023,
+        2027
+      ],
+      "base": "data/plots/CAP03",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:03"
+    },
+    {
+      "id": "CAP04",
+      "name": "容量测试样地04",
+      "years": [
+        2020,
+        2024,
+        2028
+      ],
+      "base": "data/plots/CAP04",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:03"
+    },
+    {
+      "id": "CAP05",
+      "name": "容量测试样地05",
+      "years": [
+        2020,
+        2023,
+        2026
+      ],
+      "base": "data/plots/CAP05",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:03"
+    },
+    {
+      "id": "CAP06",
+      "name": "容量测试样地06",
+      "years": [
+        2022
+      ],
+      "base": "data/plots/CAP06",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:03"
+    },
+    {
+      "id": "CAP07",
+      "name": "容量测试样地07",
+      "years": [
+        2020,
+        2023
+      ],
+      "base": "data/plots/CAP07",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP08",
+      "name": "容量测试样地08",
+      "years": [
+        2025,
+        2028
+      ],
+      "base": "data/plots/CAP08",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP09",
+      "name": "容量测试样地09",
+      "years": [
+        2025,
+        2029
+      ],
+      "base": "data/plots/CAP09",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP10",
+      "name": "容量测试样地10",
+      "years": [
+        2020,
+        2022
+      ],
+      "base": "data/plots/CAP10",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP11",
+      "name": "容量测试样地11",
+      "years": [
+        2020
+      ],
+      "base": "data/plots/CAP11",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP12",
+      "name": "容量测试样地12",
+      "years": [
+        2022,
+        2026,
+        2030
+      ],
+      "base": "data/plots/CAP12",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP13",
+      "name": "容量测试样地13",
+      "years": [
+        2025,
+        2028
+      ],
+      "base": "data/plots/CAP13",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP14",
+      "name": "容量测试样地14",
+      "years": [
+        2022,
+        2025
+      ],
+      "base": "data/plots/CAP14",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP15",
+      "name": "容量测试样地15",
+      "years": [
+        2022,
+        2024
+      ],
+      "base": "data/plots/CAP15",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP16",
+      "name": "容量测试样地16",
+      "years": [
+        2025,
+        2028,
+        2031
+      ],
+      "base": "data/plots/CAP16",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:04"
+    },
+    {
+      "id": "CAP17",
+      "name": "容量测试样地17",
+      "years": [
+        2023
+      ],
+      "base": "data/plots/CAP17",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP18",
+      "name": "容量测试样地18",
+      "years": [
+        2025,
+        2029
+      ],
+      "base": "data/plots/CAP18",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP19",
+      "name": "容量测试样地19",
+      "years": [
+        2022,
+        2026,
+        2030
+      ],
+      "base": "data/plots/CAP19",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP20",
+      "name": "容量测试样地20",
+      "years": [
+        2022
+      ],
+      "base": "data/plots/CAP20",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP21",
+      "name": "容量测试样地21",
+      "years": [
+        2025,
+        2029
+      ],
+      "base": "data/plots/CAP21",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP22",
+      "name": "容量测试样地22",
+      "years": [
+        2020,
+        2024
+      ],
+      "base": "data/plots/CAP22",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP23",
+      "name": "容量测试样地23",
+      "years": [
+        2022,
+        2024
+      ],
+      "base": "data/plots/CAP23",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP24",
+      "name": "容量测试样地24",
+      "years": [
+        2020,
+        2023
+      ],
+      "base": "data/plots/CAP24",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP25",
+      "name": "容量测试样地25",
+      "years": [
+        2025,
+        2029,
+        2033
+      ],
+      "base": "data/plots/CAP25",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP26",
+      "name": "容量测试样地26",
+      "years": [
+        2018,
+        2022
+      ],
+      "base": "data/plots/CAP26",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:05"
+    },
+    {
+      "id": "CAP27",
+      "name": "容量测试样地27",
+      "years": [
+        2018,
+        2022,
+        2026
+      ],
+      "base": "data/plots/CAP27",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:06"
+    },
+    {
+      "id": "CAP28",
+      "name": "容量测试样地28",
+      "years": [
+        2018,
+        2021
+      ],
+      "base": "data/plots/CAP28",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:06"
+    },
+    {
+      "id": "CAP29",
+      "name": "容量测试样地29",
+      "years": [
+        2023,
+        2027,
+        2031
+      ],
+      "base": "data/plots/CAP29",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:06"
+    },
+    {
+      "id": "CAP30",
+      "name": "容量测试样地30",
+      "years": [
+        2023,
+        2027,
+        2031
+      ],
+      "base": "data/plots/CAP30",
+      "tree_count": null,
+      "data_nature": "simulated",
+      "managed": true,
+      "imported_at": "2026-11-03T04:14:06"
+    }
+  ]
+}

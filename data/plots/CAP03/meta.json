@@ -1,0 +1,39 @@
+{
+  "id": "CAP03",
+  "name": "容量测试样地03",
+  "years": [
+    2023,
+    2027
+  ],
+  "data_nature": "simulated",
+  "tree_count": 158,
+  "plot_meta": {
+    "plot_id": "CAP03",
+    "region": "测试区域D",
+    "site": "容量测试样地03",
+    "longitude": null,
+    "latitude": null,
+    "elevation_m": null,
+    "aspect": null,
+    "coordinate_reference": "unknown",
+    "point_role": "unknown",
+    "corner_identity": "unknown",
+    "precision": "unknown",
+    "vertical_datum": "unknown",
+    "verification_status": "待核实",
+    "source": "样地工作数据库（坐标未配准）",
+    "survey_area_m2": 1200.0,
+    "survey_area_source": "规格面积",
+    "notes": [
+      "局部 X/Y 坐标未配准，仅作样地内相对展示"
+    ]
+  },
+  "integrity": {
+    "global_blocked": false,
+    "blocking_reason": null,
+    "issue_count": 0,
+    "quarantined_seq_count": 0
+  },
+  "imported_at": "2026-11-03T04:14:06",
+  "note": "三维单木按实测参数以树种资产模板实时渲染；局部坐标未配准"
+}

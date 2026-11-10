@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>林样智记 V2.1 · FM1 三维森林查看器</title>
+<style>
+  :root {
+    --primary: #2d5a3d;
+    --primary-dark: #193523;
+    --primary-accent: #3d7a52;
+    --gold-accent: #e6a832;
+    --bg-panel: rgba(248, 246, 240, 0.96);
+    --text: #222622;
+    --text-light: #5c635a;
+    --border: #d5cfc0;
+    --bad: #c0392b;
+    /* 顶栏与次级工具栏实际底边高度（px）：由 JS ResizeObserver 实时同步，彻底杜绝面板重叠 */
+    --hud-top: 56px;
+    --subbar-top: 102px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
+  #canvas-single { position: absolute; inset: 0; touch-action: none; }
+  #dual-wrap { position: absolute; inset: 0; display: none; flex-direction: row; overflow: hidden; touch-action: none; }
+  #dual-wrap.layout-vertical { flex-direction: column; }
+  .dual-pane { position: relative; flex: 1 1 50%; min-width: 140px; min-height: 120px; overflow: hidden; touch-action: none; }
+  .dual-splitter {
+    flex: 0 0 8px; background: rgba(20, 42, 28, 0.94);
+    border-left: 1px solid rgba(245,241,232,0.25); border-right: 1px solid rgba(245,241,232,0.25);
+    cursor: col-resize; position: relative; z-index: 14;
+    display: flex; align-items: center; justify-content: center;
+    color: #e6a832; font-size: 11px; user-select: none; transition: background 0.15s;
+    touch-action: none;
+  }
+  .dual-splitter:hover, .dual-splitter.dragging { background: #2d5a3d; color: #fff; }
+  #dual-wrap.layout-vertical .dual-splitter {
+    cursor: row-resize; border-left: none; border-right: none;
+    border-top: 1px solid rgba(245,241,232,0.25); border-bottom: 1px solid rgba(245,241,232,0.25);
+  }
+  .pane-head-bar {
+    position: absolute; top: calc(var(--subbar-top) + 40px); left: 12px; z-index: 12;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    background: rgba(20, 42, 28, 0.90); color: #f5f1e8;
+    border: 1px solid rgba(245,241,232,0.28); box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  #dual-wrap.layout-vertical .dual-pane:not(#view-left) .pane-head-bar {
+    top: 12px;
+  }
+  .pane-label { pointer-events: none; }
+  .pane-year-sel {
+    padding: 2px 7px; border-radius: 5px; border: 1px solid rgba(245,241,232,0.38);
+    background: rgba(245,241,232,0.14); color: #fff; font-size: 11.5px; cursor: pointer; outline: none;
+  }
+  .pane-year-sel option { color: var(--text); background: #f5f1e8; }
+  .pane-max-btn {
+    border: 1px solid rgba(245,241,232,0.32); background: rgba(245,241,232,0.12);
+    color: #f5f1e8; border-radius: 5px; padding: 1px 6px; cursor: pointer; font-size: 11.5px;
+  }
+  .pane-max-btn:hover { background: rgba(245,241,232,0.28); }
+  #dual-toolbar {
+    position: absolute; top: var(--subbar-top); left: 50%; transform: translateX(-50%);
+    z-index: 16; display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 9px;
+    background: rgba(18, 38, 25, 0.92); border: 1px solid rgba(245,241,232,0.30);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.28); backdrop-filter: blur(8px);
+  }
+  /* 通用浮动窗口右下角自由缩放手柄 */
+  .win-resizer {
+    position: absolute; right: 0; bottom: 0; width: 15px; height: 15px;
+    cursor: nwse-resize; z-index: 25;
+    background: linear-gradient(135deg, transparent 52%, rgba(45,90,61,0.5) 52%);
+    border-bottom-right-radius: 10px;
+  }
+  .win-resizer:hover {
+    background: linear-gradient(135deg, transparent 46%, #e6a832 46%);
+  }
+
+  /* 通用按钮与徽章组件（补齐弹窗与卡片内的 .btn / .badge 样式） */
+  .btn {
+    padding: 4px 11px; border: 1px solid #b5c2b0; border-radius: 6px;
+    background: #ffffff; color: var(--primary-dark); cursor: pointer; font-size: 11.5px;
+    font-weight: 600; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .btn:hover { background: #e8f0e6; border-color: #8fa688; }
+  .btn.primary { background: linear-gradient(135deg, #2d6341, #214a30); border-color: #214a30; color: #fff; box-shadow: 0 1px 4px rgba(33,74,48,0.25); }
+  .btn.primary:hover { background: linear-gradient(135deg, #35734c, #28593a); }
+  .badge {
+    display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 10.5px; font-weight: 600;
+  }
+  .badge.survey { background: #d4e8d6; color: #1d4d2b; }
+  .badge.sim, .badge.warn { background: #f7e4be; color: #805300; }
+  .badge.bad { background: #f8d7d3; color: var(--bad); }
+
+  #topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 15;
+    display: flex; align-items: center; gap: 6px; row-gap: 5px; padding: 7px 14px; flex-wrap: wrap;
+    background: linear-gradient(180deg, rgba(18, 40, 26, 0.97) 0%, rgba(24, 52, 34, 0.92) 100%);
+    color: #f5f1e8; box-shadow: 0 2px 14px rgba(0,0,0,0.28);
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+    backdrop-filter: blur(8px);
+  }
+  #topbar h1 { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; margin-right: 2px; white-space: nowrap; }
+  #topbar h1 small { font-weight: 400; opacity: 0.80; margin-left: 6px; font-size: 11px; }
+  .btn-row { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  /* 分段胶囊按钮组（显示范围、调查期） */
+  #topbar .seg-row {
+    background: rgba(10, 24, 15, 0.48); padding: 2px; border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.14); gap: 2px;
+  }
+  .ctl-btn, .tier-btn, .year-btn, [data-mode] {
+    padding: 4px 10px; border: 1px solid rgba(245,241,232,0.26); border-radius: 6px;
+    background: rgba(245,241,232,0.08); color: #eef2eb; font-size: 11.5px; cursor: pointer;
+    transition: all 0.15s ease; white-space: nowrap; line-height: 1.35;
+  }
+  .seg-row .year-btn, .seg-row [data-mode] {
+    border-color: transparent; background: transparent; border-radius: 5px; padding: 3px 9px;
+  }
+  .ctl-btn:hover, .tier-btn:hover, .year-btn:hover, [data-mode]:hover {
+    background: rgba(245,241,232,0.20); border-color: rgba(245,241,232,0.52); color: #fff;
+  }
+  /* 激活态：温润琥珀金与森林翠绿区分，告别生硬死白方块 */
+  .year-btn.active, [data-mode].active {
+    background: linear-gradient(135deg, #e8aa35, #d4921c) !important;
+    color: #1f1400 !important; border-color: #f3be56 !important;
+    font-weight: 700; box-shadow: 0 1px 5px rgba(0,0,0,0.28);
+  }
+  .ctl-btn.active, .tier-btn.active {
+    background: linear-gradient(135deg, rgba(64, 158, 96, 0.42), rgba(42, 118, 68, 0.52));
+    color: #ffffff; border-color: #6fd68e; font-weight: 600;
+    box-shadow: inset 0 0 0 1px rgba(111,214,142,0.25), 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .year-btn:disabled, .ctl-btn:disabled {
+    opacity: 0.38; cursor: not-allowed;
+  }
+  .grp-label { font-size: 11px; color: rgba(235, 242, 235, 0.72); margin: 0 1px 0 3px; white-space: nowrap; }
+  .spacer { flex: 1; }
+  #plot-select, #ghost-select, #tier-select, #crown-style-select {
+    padding: 3.5px 8px; border: 1px solid rgba(245,241,232,0.32); border-radius: 6px;
+    background: rgba(14, 32, 20, 0.65); color: #f5f1e8; font-size: 11.5px; cursor: pointer;
+    max-width: 175px; outline: none; transition: border-color 0.15s;
+  }
+  #plot-select:hover, #ghost-select:hover, #crown-style-select:hover {
+    border-color: rgba(245,241,232,0.65);
+  }
+  #plot-select option, #ghost-select option, #tier-select option, #crown-style-select option {
+    color: var(--text); background: #f5f1e8;
+  }
+
+  #view-row {
+    position: absolute; top: var(--hud-top); left: 14px; z-index: 12;
+    background: rgba(18, 38, 25, 0.90); padding: 4px 9px; border-radius: 9px;
+    border: 1px solid rgba(245,241,232,0.22); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.22); max-width: calc(100vw - 28px);
+    transition: opacity 0.18s, transform 0.18s;
+  }
+  #view-row.vr-hidden {
+    display: none !important;
+  }
+  .vr-sep { width: 1px; height: 18px; background: rgba(245,241,232,0.22); margin: 0 3px; }
+
+  /* 专业软件级「场景与图层设置」收纳抽屉面板 */
+  #env-drawer {
+    position: absolute; top: var(--hud-top); right: 14px; z-index: 37;
+    width: 328px; max-width: calc(100vw - 20px);
+    background: rgba(22, 46, 30, 0.96); color: #f5f1e8;
+    border: 1px solid rgba(230, 168, 50, 0.45); border-radius: 12px;
+    padding: 12px 14px; box-shadow: 0 12px 34px rgba(0,0,0,0.38);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    display: none; flex-direction: column; gap: 10px; font-size: 12px;
+  }
+  #env-drawer.open { display: flex; }
+  .ed-head {
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 700; font-size: 13px; color: #ffde8a;
+    padding-bottom: 6px; border-bottom: 1px solid rgba(245,241,232,0.15);
+  }
+  .ed-sec { display: flex; flex-direction: column; gap: 5px; }
+  .ed-label { font-size: 11px; color: rgba(235,242,235,0.72); font-weight: 600; }
+  .ed-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .ed-row select { flex: 1; max-width: 190px !important; }
+  .ed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .ed-grid .ctl-btn { justify-content: center; text-align: center; padding: 5px 8px; }
+
+  /* 顶栏一键完全收起后的左上角唤醒胶囊 */
+  #ui-restore-pill {
+    position: fixed; top: 10px; left: 12px; z-index: 48; display: none;
+    padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 700;
+    background: rgba(18, 40, 26, 0.92); color: #ffde8a;
+    border: 1px solid rgba(230, 168, 50, 0.65); box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    cursor: pointer; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  #ui-restore-pill:hover { background: #2d5a3d; color: #fff; }
+  body.ui-minimized #topbar,
+  body.ui-minimized #view-row,
+  body.ui-minimized #env-drawer {
+    display: none !important;
+  }
+  body.ui-minimized #ui-restore-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+
+  #search-box {
+    display: inline-flex; gap: 4px; align-items: center;
+  }
+  #search-input {
+    width: 195px; padding: 3.5px 8px; border: 1px solid rgba(245,241,232,0.38); border-radius: 6px;
+    font-size: 11.5px; background: rgba(248,246,240,0.95); color: var(--text); outline: none;
+  }
+  #search-input:focus { border-color: #e6a832; background: #fff; box-shadow: 0 0 0 2px rgba(230,168,50,0.25); }
+  #btn-search, #btn-cmd-open {
+    padding: 3.5px 9px; border: 1px solid rgba(245,241,232,0.35); border-radius: 6px;
+    background: linear-gradient(135deg, #ebb03c, #d9971e); color: #261900; cursor: pointer; font-size: 11.5px; font-weight: 700;
+    transition: all 0.15s;
+  }
+  #btn-cmd-open {
+    background: rgba(245,241,232,0.14); color: #f5f1e8; font-weight: 600;
+  }
+  #btn-search:hover { background: linear-gradient(135deg, #f4bc4b, #e3a229); }
+  #btn-cmd-open:hover { background: rgba(245,241,232,0.26); border-color: rgba(245,241,232,0.55); }
+
+  /* 我的世界风第一/第三人称林调小人漫游 HUD */
+  #roam-hud {
+    position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%);
+    z-index: 32; display: none; flex-direction: column; gap: 6px;
+    padding: 9px 14px; border-radius: 10px; min-width: 560px; max-width: 92vw;
+    background: rgba(20, 42, 28, 0.94); color: #f5f1e8;
+    border: 1px solid rgba(230, 168, 50, 0.65);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.38); backdrop-filter: blur(8px); font-size: 12px;
+  }
+  #roam-hud.open { display: flex; }
+  .roam-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #roam-radar {
+    padding: 4px 10px; border-radius: 6px; background: rgba(255, 181, 49, 0.16);
+    border: 1px solid rgba(255, 181, 49, 0.45); color: #ffe7b3; font-size: 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  #roam-crosshair {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 22px; height: 22px; pointer-events: none; z-index: 28; display: none;
+  }
+  #roam-crosshair::before, #roam-crosshair::after {
+    content: ''; position: absolute; background: rgba(255, 245, 200, 0.92);
+    box-shadow: 0 0 4px rgba(0,0,0,0.85);
+  }
+  #roam-crosshair::before { top: 10px; left: 2px; width: 18px; height: 2px; }
+  #roam-crosshair::after { left: 10px; top: 2px; width: 2px; height: 18px; }
+  #roam-crosshair .ch-dot {
+    position: absolute; top: 9px; left: 9px; width: 4px; height: 4px;
+    border-radius: 50%; background: #ffb531;
+  }
+
+  /* 自定义调查指令面板 */
+  #cmd-modal {
+    position: absolute; top: var(--subbar-top); left: 240px;
+    z-index: 39; width: 530px; max-width: calc(100vw - 32px);
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.35); display: none; flex-direction: column;
+    overflow: hidden; font-size: 12px;
+  }
+  #cmd-modal.open { display: flex; }
+  .cmd-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 99px; background: #e2eee4; color: #1e3d28;
+    border: 1px solid #b8d0bc; cursor: pointer; font-size: 11.5px; font-weight: 600;
+  }
+  .cmd-chip:hover { background: #cde3d1; }
+  .cmd-chip b { color: var(--bad); margin-left: 3px; font-weight: 700; }
+  #search-msg {
+    position: fixed; top: var(--subbar-top); left: 50%; transform: translateX(-50%);
+    z-index: 42; pointer-events: none;
+    color: #fff8e8; font-size: 12.5px; background: rgba(20, 42, 28, 0.94);
+    padding: 5px 16px; border-radius: 99px; border: 1px solid rgba(230, 168, 50, 0.55);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.32); white-space: nowrap;
+  }
+  #search-msg:empty { display: none; }
+
+  #sel-wrap {
+    position: absolute; top: var(--subbar-top); left: 14px; z-index: 10; max-width: 440px;
+    padding: 6px 10px; border-radius: 9px; font-size: 12px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    display: none; flex-wrap: wrap; gap: 5px; align-items: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.16); backdrop-filter: blur(6px);
+  }
+  .sel-chip {
+    background: #d4e4d0; color: var(--primary-dark); padding: 2px 8px;
+    border-radius: 10px; font-size: 11.5px; cursor: pointer; font-weight: 600;
+  }
+  .sel-chip:hover { background: #c2d9bc; }
+  .sel-chip b { cursor: pointer; color: var(--bad); margin-left: 3px; }
+  .mini {
+    border: 1px solid #c5bfb0; background: #fff; border-radius: 5px;
+    padding: 2px 8px; font-size: 11px; cursor: pointer; color: var(--text);
+    transition: all 0.14s; font-weight: 500;
+  }
+  .mini:hover { background: #e8efe5; border-color: #8fa688; }
+  .mini.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+
+  /* 悬停树木浮动提示 */
+  #hover-tip {
+    position: fixed; z-index: 40; pointer-events: none; display: none;
+    padding: 6px 11px; border-radius: 7px; font-size: 12px; line-height: 1.45;
+    background: rgba(18, 38, 25, 0.94); color: #f5f1e8;
+    border: 1px solid rgba(230, 168, 50, 0.45);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.32); white-space: nowrap;
+  }
+
+  #stats {
+    position: absolute; bottom: 42px; right: 14px; z-index: 9; padding: 4px 11px;
+    border-radius: 7px; font-size: 11.5px; color: var(--text);
+    background: var(--bg-panel); border: 1px solid var(--border);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.14); white-space: nowrap;
+  }
+  #stats b { color: var(--primary-dark); }
+  #fps {
+    position: absolute; bottom: 10px; right: 14px; z-index: 9; padding: 3px 11px;
+    border-radius: 6px; font-size: 11px; color: #e8f2ea;
+    background: rgba(20, 42, 28, 0.90); border: 1px solid rgba(111, 214, 142, 0.35);
+    min-width: 140px; text-align: center;
+  }
+  #coord-warning {
+    position: absolute; bottom: 10px; left: 14px; right: 345px; z-index: 9;
+    padding: 4px 11px; border-radius: 7px; font-size: 11px;
+    background: rgba(24, 48, 32, 0.92); color: #f5f1e8; border: 1px solid rgba(230, 168, 50, 0.48);
+    display: flex; align-items: center; gap: 8px; backdrop-filter: blur(6px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.20);
+  }
+  #coord-warning #cw-text {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #coord-warning .panel-x { color: #f5f1e8; }
+  #coord-warning .panel-x:hover { color: #ffb531; }
+  #coord-reopen {
+    position: absolute; bottom: 10px; left: 14px; z-index: 9; display: none;
+    padding: 3px 9px; border-radius: 6px; font-size: 11.5px; cursor: pointer;
+    background: rgba(24, 48, 32, 0.92); color: #ffde8a; border: 1px solid #d9a52a;
+  }
+  #legend {
+    position: absolute; bottom: 48px; left: 14px; z-index: 9;
+    padding: 6px 11px; border-radius: 9px; font-size: 11.5px; color: var(--text);
+    background: var(--bg-panel); border: 1px solid var(--border); line-height: 1.65;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15); backdrop-filter: blur(6px);
+  }
+  .panel-head { display: flex; align-items: center; gap: 8px; }
+  .panel-head b { font-weight: 700; color: var(--primary-dark); }
+  .panel-x {
+    border: none; background: transparent; cursor: pointer;
+    color: var(--text-light); font-size: 13px; padding: 0 3px; line-height: 1;
+  }
+  .panel-x:hover { color: var(--bad); }
+  #legend.legend-collapsed .panel-x { display: none; }
+  #legend .legend-body { margin-top: 4px; }
+  #legend.legend-collapsed .legend-body { display: none; }
+  .legend-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+  /* 生长插值滑块（完整样地+单期时显示，严格避让底部标注条与右侧统计栏） */
+  #growth-bar {
+    position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
+    z-index: 11; display: none; align-items: center; gap: 8px;
+    padding: 5px 14px; border-radius: 9px; font-size: 12px; color: var(--text);
+    background: var(--bg-panel); border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18); backdrop-filter: blur(6px);
+  }
+  #growth-range { width: 190px; accent-color: #2d5a3d; cursor: pointer; }
+  #growth-bar .gtitle { font-weight: 700; color: var(--primary-dark); }
+
+  /* 样地统计面板：支持拖拽与折叠 */
+  #stats-panel {
+    position: absolute; top: var(--subbar-top); left: 14px; z-index: 20;
+    width: 390px; max-width: 42vw; max-height: calc(100vh - var(--subbar-top) - 96px);
+    padding: 8px 12px 10px; border-radius: 10px; font-size: 12px; color: var(--text);
+    background: var(--bg-panel); border: 1px solid var(--border); display: none;
+    overflow: hidden; box-shadow: 0 8px 26px rgba(0,0,0,0.22); backdrop-filter: blur(8px);
+  }
+  .sp-head-row {
+    display: flex; align-items: center; gap: 8px; cursor: move;
+    padding-bottom: 4px; border-bottom: 1px solid rgba(214,208,194,0.6);
+    user-select: none;
+  }
+  .sp-head-row b { font-weight: 700; color: var(--primary-dark); }
+  .sp-head-row .sp-note { color: var(--text-light); font-size: 11px; flex: 1; }
+  #sp-toggle {
+    border: 1px solid var(--border); background: #fff; border-radius: 4px;
+    width: 22px; height: 20px; cursor: pointer; color: var(--text-light);
+    font-size: 11px; line-height: 1; flex: none;
+  }
+  #sp-toggle:hover { background: #e8e4d8; }
+  #sp-body { max-height: 44vh; overflow-y: auto; padding-top: 4px; }
+  #stats-panel.sp-collapsed #sp-body { display: none; }
+  #stats-panel .sp-head { font-weight: 700; color: var(--primary-dark); margin-bottom: 5px; }
+  #stats-panel .sp-line { margin: 7px 0 2px; line-height: 1.5; }
+  #stats-panel .bin-row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #stats-panel .bin-name { width: 66px; color: var(--text-light); font-size: 11px; flex: none; }
+  #stats-panel .bin-bar { height: 10px; background: linear-gradient(90deg, #2d5a3d, #4c8c5e); border-radius: 2px; flex: none; }
+  #stats-panel .bin-n { color: var(--text-light); font-size: 11px; }
+
+  /* 树木详情卡：紧凑精致双栏布局，位于次级工具栏下方，绝不与顶栏/视角栏碰撞 */
+  #tree-card {
+    position: absolute; top: var(--subbar-top); right: 14px; z-index: 30;
+    width: 472px; max-width: calc(100vw - 28px);
+    max-height: calc(100vh - var(--subbar-top) - 82px);
+    display: none; grid-template-columns: 200px 1fr;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 11px;
+    box-shadow: 0 10px 32px rgba(0,0,0,0.32); overflow: hidden; backdrop-filter: blur(8px);
+  }
+  #tree-card.open { display: grid; }
+  #tree-card.card-collapsed { width: 215px; grid-template-columns: 1fr; }
+  #tree-card.card-collapsed .tc-right { display: none; }
+  #tree-card.card-collapsed #tc-left-close { display: block !important; }
+  #tree-card.card-collapsed #tc-expand-btn { background: #e6a832; color: #2b1d00; font-weight: 700; border-color: #d49520; }
+  .tc-left {
+    position: relative;
+    background: radial-gradient(circle at 50% 35%, #2d4f38 0%, #1d3525 70%, #15271b 100%);
+    display: flex; flex-direction: column;
+  }
+  #tc-view3d { height: 235px; position: relative; flex: 1; }
+  #tc-view3d canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+  #tc-view3d canvas:active { cursor: grabbing; }
+  .tc-left-bar {
+    display: flex; gap: 4px; padding: 5px 8px; align-items: center; flex-wrap: wrap;
+    background: rgba(245,241,232,0.95); border-top: 1px solid var(--border);
+  }
+  .tc-year-row { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; flex: 1; }
+  .tc-year-row .mini.active { background: #2d5a3d; color: #fff; border-color: #2d5a3d; }
+  .tc-right { padding: 9px 11px 11px; overflow-y: auto; max-height: calc(100vh - var(--subbar-top) - 86px); position: relative; }
+  .tc-btns { position: absolute; top: 6px; right: 8px; z-index: 2; display: flex; gap: 2px; }
+  .tc-btn {
+    border: none; background: transparent; font-size: 14px; cursor: pointer;
+    color: var(--text-light); padding: 2px 6px; border-radius: 4px; line-height: 1.3;
+  }
+  .tc-btn:hover { color: var(--bad); background: rgba(0,0,0,0.06); }
+  .td-notice {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 20px; text-align: center; font-size: 13px; color: #7a5a10;
+    background: #fdf3e0;
+  }
+  .td-loading {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    gap: 10px; font-size: 12.5px; color: #41573a; background: rgba(238, 242, 230, 0.92);
+  }
+  .td-title {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;
+    flex-wrap: wrap; padding-right: 48px; cursor: move; user-select: none;
+  }
+  .td-actions { display: flex; gap: 6px; margin: 2px 0 4px; flex-wrap: wrap; align-items: center; }
+  .td-btn {
+    padding: 5px 11px; border: 1px solid #b9c4ae; border-radius: 7px; background: #fff;
+    color: var(--primary-dark); font-size: 12px; cursor: pointer;
+  }
+  .td-btn:hover { background: #e8efe2; }
+  .td-btn.primary { background: #2d5a3d; border-color: #2d5a3d; color: #fff; }
+  .td-btn.primary:hover { background: #3a6b4c; }
+  .td-btn.warn { color: var(--bad); border-color: #dcb4ae; }
+  .td-btn.warn:hover { background: #f7e8e5; }
+  .td-nav { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .td-nav .mini { width: 26px; height: 26px; font-size: 14px; padding: 0; line-height: 1; }
+  .td-count { font-size: 12px; color: var(--text-light); min-width: 40px; text-align: center; }
+  .panel-title { display: flex; align-items: baseline; gap: 7px; margin-bottom: 9px; flex-wrap: wrap; }
+  .label-layer { position: absolute; inset: 0; z-index: 25; pointer-events: none; overflow: hidden; }
+  .tree-label {
+    position: absolute; transform: translate(-50%, -100%);
+    padding: 1px 7px; border-radius: 8px; font-size: 11.5px; font-weight: 600;
+    background: rgba(30, 61, 40, 0.92); color: #f5f1e8;
+    border: 1px solid rgba(245, 241, 232, 0.35); white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+  }
+  .tag-badge { font-size: 16px; font-weight: 700; color: var(--primary-dark); background: #d4e4d0; padding: 2px 9px; border-radius: 6px; letter-spacing: 1px; }
+  .species { font-size: 13.5px; font-weight: 600; }
+  .seq { font-size: 11.5px; color: var(--text-light); }
+  .info-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .info-table th, .info-table td { padding: 4px 3px; text-align: left; border-bottom: 1px solid #e8e4d8; }
+  .info-table th { color: var(--text-light); font-weight: 600; font-size: 11px; }
+  .info-table td:first-child { color: var(--text-light); white-space: nowrap; }
+  .dim { color: var(--text-light); font-size: 11px; }
+  .note { margin-top: 7px; padding: 6px 9px; border-radius: 6px; font-size: 11.5px; background: #fdf3e0; border: 1px solid #ecd9b0; color: #7a5a10; line-height: 1.5; }
+  .note.dim { background: #f2f0ea; border-color: var(--border); color: var(--text-light); }
+  .cmp-title { font-size: 12px; font-weight: 700; color: var(--primary-dark); margin: 8px 0 3px; }
+  .chip { display: inline-block; padding: 0 6px; border-radius: 9px; font-size: 10.5px; }
+  .chip.ok { background: #d4e4d0; color: var(--primary-dark); }
+  .chip.warn { background: #f5e3bb; color: #8a6410; }
+  .chip.bad { background: #f3cfc9; color: var(--bad); }
+  .up { color: #2d7a3d; font-weight: 600; }
+  .down { color: var(--bad); font-weight: 600; }
+  .flat { color: var(--text-light); }
+
+  /* 单木详情卡内的树种植物学档案卡 */
+  .species-box {
+    margin-top: 9px; padding: 8px 10px; border-radius: 8px;
+    background: #eef4eb; border: 1px solid #cbd9c4; font-size: 11.5px; line-height: 1.55;
+  }
+  .species-box .sb-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-weight: 700; color: var(--primary-dark); margin-bottom: 4px;
+  }
+  .species-box .sb-latin { font-style: italic; font-weight: 400; color: #546650; font-size: 11px; }
+  .species-box .sb-grid {
+    display: grid; grid-template-columns: 58px 1fr; gap: 2px 6px;
+  }
+  .species-box .sb-grid span:nth-child(odd) { color: var(--text-light); }
+
+  /* 东北森林树种图鉴浮窗 */
+  #species-modal {
+    position: absolute; top: calc(var(--hud-top) + 12px); left: 50%; transform: translateX(-50%);
+    z-index: 38; width: 780px; max-width: calc(100vw - 28px); max-height: 76vh;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 14px 42px rgba(0,0,0,0.38); display: none; flex-direction: column;
+    overflow: hidden;
+  }
+  #species-modal.open { display: flex; }
+  .sm-head {
+    padding: 10px 14px; background: linear-gradient(135deg, #1e3d28, #2d5a3d);
+    color: #f5f1e8; display: flex; align-items: center; gap: 10px; cursor: move; user-select: none;
+  }
+  .sm-head b { font-size: 14px; }
+  .sm-body { padding: 12px 14px; overflow-y: auto; flex: 1; }
+  .sm-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px;
+  }
+  .sm-card {
+    background: #fff; border: 1px solid #dcd6c8; border-radius: 8px; padding: 9px 11px;
+    font-size: 11.5px; line-height: 1.5; display: flex; flex-direction: column; gap: 4px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .sm-card.in-plot { border-color: #4c8c5e; background: #f8fbf6; box-shadow: 0 2px 8px rgba(45,90,61,0.08); }
+  .sm-card-top { display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+  .sm-swatches { display: inline-flex; gap: 3px; align-items: center; }
+  .sm-sw { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.2); display: inline-block; }
+  .legend-sp-row { cursor: pointer; padding: 1px 4px; border-radius: 4px; transition: background 0.12s; }
+  .legend-sp-row:hover { background: rgba(45,90,61,0.12); }
+
+  #loading {
+    position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: #22371f; color: #cfe0c8; font-size: 15px; transition: opacity 0.4s;
+  }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+  .spinner { width: 36px; height: 36px; border: 3px solid rgba(207,224,200,0.25); border-top-color: #cfe0c8; border-radius: 50%; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 窄屏与手机端全面适配（支持横滑工具栏、底部单木抽屉、触屏虚拟摇杆） */
+  #roam-touch-pad {
+    display: none; align-items: center; justify-content: space-between; gap: 10px;
+    padding-top: 4px; border-top: 1px solid rgba(245,241,232,0.18); user-select: none;
+  }
+  .rt-dpad, .rt-vpad { display: inline-flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .rt-btn {
+    padding: 7px 12px; border-radius: 7px; border: 1px solid rgba(255,181,49,0.55);
+    background: rgba(245,241,232,0.14); color: #fff8e6; font-size: 12.5px; font-weight: 700;
+    cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  .rt-btn:active, .rt-btn.pressed {
+    background: #e6a832; color: #1f1400; border-color: #ffd278;
+  }
+  @media (pointer: coarse), (max-width: 820px) {
+    #roam-touch-pad { display: flex; }
+  }
+  @media (max-width: 1280px) {
+    #stats-panel { width: 340px; max-width: 44vw; }
+    #tree-card { width: 440px; grid-template-columns: 185px 1fr; }
+  }
+  @media (max-width: 820px) {
+    #topbar {
+      flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; padding: 6px 10px; gap: 5px;
+    }
+    #topbar::-webkit-scrollbar { display: none; }
+    #topbar h1 small { display: none; }
+    #topbar .btn-row { flex-wrap: nowrap; flex-shrink: 0; }
+    #plot-select, #ghost-select, #crown-style-select { max-width: 125px; flex-shrink: 0; }
+    #view-row {
+      left: 6px; right: 6px; max-width: calc(100vw - 12px);
+      flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; padding: 4px 8px; gap: 5px;
+    }
+    #view-row::-webkit-scrollbar { display: none; }
+    #view-row > * { flex-shrink: 0; }
+    #search-input { width: 138px; }
+    #dual-toolbar {
+      max-width: calc(100vw - 12px); overflow-x: auto; white-space: nowrap;
+      scrollbar-width: none; padding: 3px 7px; gap: 4px;
+    }
+    #dual-toolbar::-webkit-scrollbar { display: none; }
+    .pane-head-bar { top: calc(var(--subbar-top) + 36px); left: 8px; padding: 3px 8px; font-size: 11px; }
+    #dual-wrap.layout-vertical .dual-splitter { flex: 0 0 12px; }
+    #tree-card {
+      position: fixed; top: auto !important; left: 6px !important; right: 6px !important; bottom: 6px !important;
+      width: calc(100vw - 12px) !important; max-width: calc(100vw - 12px) !important;
+      max-height: 58vh; grid-template-columns: 142px 1fr; border-radius: 13px;
+      z-index: 44;
+    }
+    #tree-card.card-collapsed {
+      left: auto !important; right: 8px !important; width: 162px !important;
+      grid-template-columns: 1fr !important; max-height: 225px;
+    }
+    #tc-view3d { height: 175px; min-height: 155px; touch-action: none; }
+    .tc-right { max-height: 56vh; padding: 8px 10px 10px; }
+    .td-title { margin-bottom: 6px; padding-right: 40px; }
+    .tag-badge { font-size: 14px; padding: 1px 7px; }
+    .td-btn { padding: 4px 8px; font-size: 11px; }
+    #stats-panel {
+      left: 6px !important; right: 6px !important; width: calc(100vw - 12px) !important;
+      max-width: calc(100vw - 12px) !important; max-height: 60vh; z-index: 35;
+    }
+    #cmd-modal, #species-modal, #azimuth-popover, #env-drawer {
+      left: 6px !important; right: 6px !important; width: calc(100vw - 12px) !important;
+      max-width: calc(100vw - 12px) !important; transform: none !important;
+      max-height: 72vh;
+    }
+    #roam-hud {
+      min-width: 0; width: calc(100vw - 12px); left: 6px; right: 6px;
+      transform: none; bottom: 8px; padding: 7px 10px; z-index: 41;
+    }
+    #roam-radar { font-size: 11px; padding: 4px 8px; }
+    #growth-bar {
+      left: 6px; right: 6px; transform: none; bottom: 40px;
+      padding: 4px 9px; gap: 5px; flex-wrap: wrap; justify-content: center;
+    }
+    #growth-range { flex: 1; min-width: 90px; width: auto; }
+    #legend { bottom: 42px; left: 6px; max-width: 66vw; font-size: 11px; padding: 5px 9px; }
+    #stats {
+      bottom: 6px; left: 6px; right: auto; max-width: calc(100vw - 132px);
+      overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; padding: 3px 8px;
+    }
+    #fps { bottom: 6px; right: 6px; min-width: 112px; font-size: 10px; padding: 3px 7px; }
+    #coord-warning {
+      bottom: 38px; left: 6px; right: 6px; font-size: 10.5px; padding: 4px 8px; z-index: 26;
+    }
+    #coord-pill { bottom: 38px !important; left: 6px !important; font-size: 10.5px !important; padding: 3px 8px !important; }
+    .win-resizer { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div id="canvas-single"></div>
+  <div id="dual-wrap">
+    <div id="dual-toolbar">
+      <button class="ctl-btn active" id="btn-dual-sync" title="开启时拖动任一视窗，其余视窗实时同步；关闭后每个视窗可独立自由旋转缩放">🔗 视角联动</button>
+      <button class="ctl-btn" id="btn-dual-layout" title="切换左右并排分屏与上下叠放分屏">◫ 左右分屏</button>
+      <button class="ctl-btn" id="btn-dual-equal" title="恢复所有分屏视窗等比尺寸">1:1 均分</button>
+      <button class="ctl-btn" id="btn-dual-3pane" title="开启/关闭第三对比视窗，支持三期同屏并列对比">⊞ 三窗同屏</button>
+      <button class="ctl-btn" id="btn-add-sim-period" title="基于当前样地生长率衍生一个新复测期，体验三期/四期连续对比">＋ 衍生复测期</button>
+    </div>
+    <div class="dual-pane" id="view-left">
+      <div class="pane-head-bar">
+        <span class="pane-label" id="pane-label-left">2023 年调查</span>
+        <select class="pane-year-sel" id="pane-year-left" title="自由切换左窗调查期"></select>
+        <button class="pane-max-btn" data-pane="left" title="放大此视窗 / 还原">⤢</button>
+      </div>
+    </div>
+    <div class="dual-splitter" id="dual-splitter-1" title="按住左右/上下拖拽自由调节视窗尺寸｜双击恢复 1:1 均分">⋮</div>
+    <div class="dual-pane" id="view-mid" style="display:none">
+      <div class="pane-head-bar">
+        <span class="pane-label" id="pane-label-mid">中窗调查期</span>
+        <select class="pane-year-sel" id="pane-year-mid" title="自由切换中窗调查期"></select>
+        <button class="pane-max-btn" data-pane="mid" title="放大此视窗 / 还原">⤢</button>
+      </div>
+    </div>
+    <div class="dual-splitter" id="dual-splitter-2" style="display:none" title="按住拖拽调节中/右视窗尺寸｜双击恢复均分">⋮</div>
+    <div class="dual-pane" id="view-right">
+      <div class="pane-head-bar">
+        <span class="pane-label" id="pane-label-right">2026 年调查</span>
+        <select class="pane-year-sel" id="pane-year-right" title="自由切换右窗调查期"></select>
+        <button class="pane-max-btn" data-pane="right" title="放大此视窗 / 还原">⤢</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="ui-restore-pill" title="展开顶部软件控制栏">🌲 展开工具栏 ▾</button>
+
+  <header id="topbar">
+    <button class="ctl-btn" id="btn-back" title="返回研究区地图">← 地图</button>
+    <h1>林样智记 V2.1<small id="subtitle">FM1 三维森林查看器</small></h1>
+    <span class="grp-label">样地</span>
+    <select id="plot-select" title="切换样地"></select>
+    <span class="grp-label">调查期</span>
+    <div class="btn-row seg-row" id="year-btns"></div>
+    <div id="search-box">
+      <input id="search-input" placeholder="搜牌号或指令（如 白桦 胸径>15）" autocomplete="off">
+      <button id="btn-search">执行</button>
+      <button id="btn-cmd-open" title="打开自定义调查指令与快捷规则工作台">⚡ 指令台</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="btn-row">
+      <button class="ctl-btn" id="btn-roam" title="林调小人 360° 漫游与自由升空飞行">🧍 漫游</button>
+      <button class="ctl-btn" id="btn-stats" title="由实测调查表推导的样地统计面板">📊 统计</button>
+      <button class="ctl-btn active" id="btn-toggle-viewbar" title="展开/收起视口相机与动画工具坞">🎥 视角工具 ▾</button>
+      <button class="ctl-btn" id="btn-toggle-env" title="打开场景显示范围、林相风格、物候与生态图层控制面板">🎛 场景与图层 ▾</button>
+      <button class="ctl-btn" id="btn-manage" title="打开样地数据管理与科研图件页">📋 数据管理</button>
+    </div>
+    <div id="compass-box" style="display:inline-flex;align-items:center;gap:4px">
+      <div id="compass-rose" title="红针指北 ｜ 点击快速归正北向" style="width:25px;height:25px;position:relative;cursor:pointer;border-radius:50%;background:#193422;border:1.5px solid #ffb531;box-shadow:0 1px 4px rgba(0,0,0,0.3)">
+        <div id="compass-needle" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transition:transform 0.08s">
+          <div style="width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-bottom:9px solid #e74c3c;position:absolute;top:2px"></div>
+          <div style="width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:9px solid #cbd5e1;position:absolute;bottom:2px"></div>
+        </div>
+      </div>
+      <button class="ctl-btn" id="btn-azimuth" title="自定义设定样地东西南北四至朝向与北向方位角（0°~360°）" style="padding:3px 7px;font-size:11px">🧭 0° ▾</button>
+    </div>
+    <button class="ctl-btn" id="btn-hide-ui" title="一键收起顶栏与工具坞，全屏纯净观看三维森林" style="padding:3px 7px">▴ 收起</button>
+  </header>
+
+  <!-- 专业软件级「场景与图层设置」收纳抽屉面板（告别顶栏按钮堆叠） -->
+  <div id="env-drawer">
+    <div class="ed-head">
+      <span>🎛 场景显示与生态图层面板</span>
+      <button class="panel-x" id="env-drawer-close" style="color:#f5f1e8;font-size:14px">✕</button>
+    </div>
+    <div class="ed-sec">
+      <span class="ed-label">单木/群落显示范围</span>
+      <div class="btn-row seg-row" style="width:100%;display:grid;grid-template-columns:repeat(3,1fr)">
+        <button data-mode="full" class="active">完整样地</button>
+        <button data-mode="single">单木聚焦</button>
+        <button data-mode="multi">自选多木</button>
+      </div>
+    </div>
+    <div class="ed-sec">
+      <div class="ed-row">
+        <span class="ed-label">非聚焦树虚化方式</span>
+        <select id="ghost-select" title="单木/多木模式下非聚焦树的呈现方式">
+          <option value="transparent">半透明整树</option>
+          <option value="light">仅树干参照</option>
+          <option value="hidden">隐藏其余树</option>
+        </select>
+      </div>
+      <div class="ed-row">
+        <span class="ed-label">三维树冠林相风格</span>
+        <select id="crown-style-select" title="切换样方树三维冠形风格">
+          <option value="layered">分层清晰（推荐）</option>
+          <option value="classic">经典极简（原版）</option>
+          <option value="detailed">枝叶簇细节</option>
+        </select>
+      </div>
+    </div>
+    <div class="ed-sec">
+      <span class="ed-label">生态物候与科研辅助图层</span>
+      <div class="ed-grid">
+        <button class="ctl-btn" id="btn-season" title="切换夏季苍翠/秋季物候叶色">🍂 秋季物候</button>
+        <button class="ctl-btn active" id="btn-undergrowth" title="显示/隐藏林下薹草、蕨类、灌草与苔石示意层">🌱 林下草本</button>
+        <button class="ctl-btn active" id="btn-wind" title="开启/暂停树冠与草丛微风摇曳">🌬 微风摇曳</button>
+        <button class="ctl-btn active" id="btn-science" title="显示/隐藏样地 5m 网格、界桩与四至方位铭牌">📐 科研网格</button>
+        <button class="ctl-btn" id="btn-atlas" title="打开东北森林 16 树种三维植物学图鉴">🌿 树种图鉴</button>
+        <button class="ctl-btn" id="btn-immersive" title="一键隐藏所有浮动标注与网格，进入纯净林相">✨ 沉浸模式</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 紧凑可收起的「视口相机与工具坞」 -->
+  <div class="btn-row" id="view-row">
+    <span class="grp-label" style="font-weight:600;color:#ffde8a">🎥 视角</span>
+    <button class="ctl-btn" id="btn-bird">鸟瞰</button>
+    <button class="ctl-btn" id="btn-inside">林内</button>
+    <button class="ctl-btn" id="btn-top">俯视</button>
+    <button class="ctl-btn" id="btn-reset">重置</button>
+    <button class="ctl-btn" id="btn-restore" title="从单木/多木恢复完整样地">恢复全林</button>
+    <span class="vr-sep"></span>
+    <button class="ctl-btn" id="btn-screenshot" title="导出当前三维画面为 PNG 图片">📷 截图</button>
+    <button class="ctl-btn" id="btn-growth-anim" title="播放两期之间的生长过渡动画">▶ 生长动画</button>
+    <button class="ctl-btn" id="btn-vr-collapse" title="收起此视角工具条（可在顶栏『🎥 视角工具』重新展开）" style="padding:2px 6px;opacity:0.8">⇤ 收起</button>
+  </div>
+
+  <div id="azimuth-popover" style="position:absolute;top:var(--subbar-top);left:420px;z-index:36;display:none;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.28);font-size:12px;width:290px">
+    <div style="font-weight:700;color:var(--primary-dark);margin-bottom:5px;display:flex;justify-content:space-between;align-items:center">
+      <span>🧭 设定样地东西南北朝向</span>
+      <button class="panel-x" id="azimuth-close">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--text-light);line-height:1.45;margin-bottom:7px">
+      自定义样地四至朝向：设定样地 Y 轴相对真北的方位角（0°=正北向上，90°=正东向上，支持自定义任意地形坡向/磁偏角）。
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">
+      <label>北向方位角</label>
+      <input id="azimuth-input" type="number" min="0" max="360" step="1" value="0" style="width:65px;padding:3px 6px;border:1px solid #b9c4ae;border-radius:5px;font-size:12px;font-weight:700">
+      <span>度 (°)</span>
+      <button class="btn primary" id="btn-save-azimuth" style="padding:3px 10px;font-size:11.5px">应用</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px">
+      <button class="mini az-preset" data-deg="0">正北 0°</button>
+      <button class="mini az-preset" data-deg="35">东北坡 35°</button>
+      <button class="mini az-preset" data-deg="90">正东 90°</button>
+      <button class="mini az-preset" data-deg="180">正南 180°</button>
+      <button class="mini az-preset" data-deg="270">正西 270°</button>
+    </div>
+  </div>
+
+  <div id="roam-hud">
+    <div class="roam-row">
+      <b style="color:#ffb531">🧍 林调员 360° 漫游</b>
+      <button class="ctl-btn active" id="roam-view-btn" title="按 V 键切换：第三人称360°自由环绕 / 第一人称人眼平视（滚轮拉到最近也可自动切入第一人称）">🧍 第三人称 360° 环绕 (V)</button>
+      <button class="ctl-btn active" id="roam-fly-btn" title="切换自由升降飞行（Space/E升空、C/Q下降）与地面步行">🕊 自由升降: 开</button>
+      <span>身高</span>
+      <input id="roam-height-input" type="number" min="1.20" max="2.20" step="0.01" value="1.72" style="width:56px;padding:2px 5px;border-radius:4px;border:1px solid #8ba892;background:#fff;color:#1e3d28;font-weight:700">
+      <span>m</span>
+      <input id="roam-height-range" type="range" min="120" max="220" step="1" value="172" style="width:82px;accent-color:#ffb531;cursor:pointer" title="拖动实时改变小人身高（头顶=设定身高，金色胸高环恒定 1.30m）">
+      <span id="roam-eye-label" style="color:#b8d8be;font-size:11px">眼高 1.60m · 离地 0.0m</span>
+      <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:11.5px;color:#d8ecd8" title="勾选后退出漫游时将小人留在样地中作为真实身高比例尺参照">
+        <input type="checkbox" id="roam-keep-avatar" checked> 📌 退出保留小人参照
+      </label>
+      <button class="ctl-btn" id="roam-exit-btn" style="margin-left:auto;background:#d9534f;border-color:#eb7a77;color:#fff;font-weight:700">✕ 退出漫游 (Esc)</button>
+    </div>
+    <div id="roam-radar">
+      <span id="roam-radar-text">💡 单指划屏 360° 环绕小人 · 双指捏合缩放 · WASD/下方触控键移动与升降 · 直接点击树木查看详情</span>
+      <button class="ctl-btn" id="roam-inspect-btn" style="display:none;background:#ffb531;color:#2b1d00;font-weight:700;padding:2px 9px">🌲 查看身边树 (F)</button>
+    </div>
+    <div id="roam-touch-pad">
+      <div class="rt-dpad">
+        <button type="button" class="rt-btn" data-roam-key="KeyW">▲ 前进</button>
+        <button type="button" class="rt-btn" data-roam-key="KeyS">▼ 后退</button>
+        <button type="button" class="rt-btn" data-roam-key="KeyA">◀ 左移</button>
+        <button type="button" class="rt-btn" data-roam-key="KeyD">▶ 右移</button>
+      </div>
+      <div class="rt-vpad">
+        <button type="button" class="rt-btn" data-roam-key="Space">🔼 升空</button>
+        <button type="button" class="rt-btn" data-roam-key="KeyC">🔽 下降</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="cmd-modal">
+    <div class="sm-head" id="cmd-drag-handle">
+      <b>⚡ 自定义森林调查指令台（非模板化自由语法 + 自定义指令保存）</b>
+      <span style="flex:1"></span>
+      <button class="ctl-btn" id="cmd-close" style="padding:2px 9px">✕ 关闭</button>
+    </div>
+    <div class="sm-body" style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:11.5px;color:#41573a;line-height:1.55;background:#eef5ec;padding:7px 10px;border-radius:7px;border:1px solid #c8dac4">
+        <b>自由语法说明：</b>支持任意组合条件（空格分隔）、排序截取与漫游动作，无需按固定模板：<br>
+        • <b>属性筛选：</b><code>白桦 胸径>15</code> ｜ <code>落叶松 树高14-20 冠幅>=3.5</code> ｜ <code>x>15 y<15</code> ｜ <code>大径木</code><br>
+        • <b>极值与跨期：</b><code>最高8棵</code> ｜ <code>胸径前10</code> ｜ <code>Δ胸径>0.8</code> ｜ <code>胸径下降</code> ｜ <code>待核实</code><br>
+        • <b>漫游与场景控制：</b><code>走到 0322</code>（小人传送至该树前）｜ <code>身高 1.80</code> ｜ <code>对比 2023 2026</code>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input id="cmd-custom-name" placeholder="自定义指令名称（如：优势白桦筛查）" style="width:175px;padding:5px 8px;border:1px solid #b9c4ae;border-radius:6px;font-size:12px">
+        <input id="cmd-custom-expr" placeholder="自由指令内容（如：白桦 胸径>=15 树高>=14）" style="flex:1;padding:5px 8px;border:1px solid #b9c4ae;border-radius:6px;font-size:12px">
+        <button class="td-btn primary" id="btn-cmd-save">＋ 保存指令</button>
+      </div>
+      <div>
+        <div style="font-weight:700;color:#1e3d28;margin-bottom:5px">📌 我的自定义调查指令（点击即执行，可随时增删）：</div>
+        <div id="cmd-chip-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+      <div id="cmd-result-box" style="padding:6px 9px;background:#f7f5ef;border:1px solid #dcd6c8;border-radius:6px;font-size:11.5px;color:#2d5a3d;min-height:28px">
+        点击任意指令或在顶栏输入框回车即可执行并输出统计摘要。
+      </div>
+    </div>
+  </div>
+
+  <div id="sel-wrap"><span class="dim">多选模式：点击树木加入选择</span></div>
+  <span id="search-msg"></span>
+  <div id="hover-tip"></div>
+
+  <div id="legend">
+    <div class="panel-head">
+      <b>图例</b>
+      <button class="panel-x" id="legend-collapse" title="收起图例">▾</button>
+      <button class="panel-x" id="legend-close" title="关闭图例">✕</button>
+    </div>
+    <div class="legend-body"></div>
+  </div>
+
+  <div id="stats"></div>
+  <div id="growth-bar">
+    <span class="gtitle">演替</span>
+    <span id="growth-knots" style="display:inline-flex;gap:3px"></span>
+    <input id="growth-range" type="range" min="0" max="100" step="1" value="0">
+    <span id="growth-label">2023 期</span>
+    <span class="dim" title="多期实测参数分段线性插值示意，节点处等于实测值">多期插值</span>
+  </div>
+  <div id="stats-panel">
+    <div class="sp-head-row" id="sp-drag-handle" title="按住标题栏可拖动面板位置">
+      <b>样地统计</b><span class="sp-note">由实测调查表推导</span>
+      <button id="sp-toggle" title="折叠/展开">▾</button>
+      <button class="panel-x" id="sp-close" title="关闭统计面板">✕</button>
+    </div>
+    <div id="sp-body"></div>
+    <div class="win-resizer" data-resize="stats-panel" title="拖拽右下角可自由缩放统计面板尺寸"></div>
+  </div>
+  <div id="fps">FPS --</div>
+  <div id="coord-warning">
+    <span id="cw-text" style="flex:1"><b>🧭 样地方位：</b>北向 <b id="cw-azimuth">0°</b> ｜ ⚠ 局部坐标未配准；参数化三维为各期实测参数构建的结构示意，非真实树冠时序重建；季节物候、林下草本与微风动画为生态示意层（非实测调查对象）。</span>
+    <button class="ctl-btn" id="coord-collapse-btn" style="padding:2px 7px;font-size:11px" title="收起下方方位与科研说明卡片">▾ 收起</button>
+    <button class="panel-x" id="coord-close" title="关闭卡片">✕</button>
+  </div>
+  <div id="coord-pill" style="display:none;position:absolute;bottom:10px;left:16px;z-index:9;padding:4px 11px;border-radius:6px;font-size:11.5px;cursor:pointer;background:rgba(20,44,28,0.92);color:#ffde8a;border:1px solid #d9a52a;box-shadow:0 3px 10px rgba(0,0,0,0.25)" title="点击展开样地方位与科研标注卡片">🧭 样地方位与科研标注卡片 ▸</div>
+  <button id="coord-reopen" title="显示科研标注" style="display:none">⚠ 标注</button>
+
+  <div id="tree-card">
+    <div class="tc-left">
+      <button class="panel-x" id="tc-left-close" style="position:absolute;top:6px;right:8px;z-index:20;background:rgba(255,255,255,0.85);border-radius:4px;padding:2px 6px;font-size:13px;display:none;cursor:pointer" title="关闭 (Esc)">✕</button>
+      <div id="tc-view3d"></div>
+      <div class="tc-left-bar">
+        <div class="tc-year-row" id="tc-year-row" style="display:none">
+          <span class="dim">年份</span>
+          <button class="mini td-yr" data-y="2023">2023</button>
+          <button class="mini td-yr" data-y="2026">2026</button>
+        </div>
+        <button class="mini" id="tc-ruler-btn" title="显示/隐藏 1.3m 胸高测量环与树高标尺">📏 1.3m标尺</button>
+        <button class="mini" id="tc-expand-btn" title="展开/收起右侧单木测量数据面板">📋 展开数据 ⇥</button>
+      </div>
+    </div>
+    <div class="tc-right">
+      <div class="tc-btns">
+        <button class="tc-btn" id="tc-collapse" title="折叠/展开详情">⇤</button>
+        <button class="tc-btn" id="tc-close" title="关闭 (Esc)">✕</button>
+      </div>
+      <div class="tc-drag-bar" id="tc-drag-bar" style="cursor:move;user-select:none;font-size:10.5px;color:#7a8a76;margin-bottom:3px;display:flex;align-items:center;gap:4px" title="按住可拖拽移动卡片位置"><span>⋮⋮ 拖动移动卡片</span></div>
+      <div class="td-title" id="tc-title" title="按住标题栏可拖动详情卡"></div>
+      <div class="td-actions" id="tc-actions"></div>
+      <details id="tc-annotate-box" style="margin:4px 0 6px;padding:4px 8px;border-radius:6px;background:#f2f7ef;border:1px solid #c9dac4;font-size:11px">
+        <summary style="font-weight:700;color:var(--primary-dark);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+          <span>🏷 单木现场实况自主标注 ▾</span>
+          <span id="tc-status-badge" class="badge survey" style="font-size:10px">活立木·正常</span>
+        </summary>
+        <div style="margin-top:5px;display:flex;gap:4px;align-items:center">
+          <select id="tc-status-sel" style="flex:1;padding:2px 5px;border:1px solid #b9c4ae;border-radius:4px;font-size:11px;background:#fff">
+            <option value="living">🌲 活立木（正常全树）</option>
+            <option value="felled">🪓 采伐木（伐桩·年轮）</option>
+            <option value="fallen">🌪 风倒木（地面倒木）</option>
+            <option value="snag">🍂 枯立木（自然枯死）</option>
+            <option value="broken">⚡ 断梢折干木</option>
+            <option value="suspect">❓ 异常待查</option>
+          </select>
+          <button class="btn primary" id="btn-save-status" style="padding:2px 8px;font-size:11px">✓ 确定</button>
+        </div>
+        <input id="tc-status-note" placeholder="实况说明（如：抚育采伐，仅余伐桩）" style="width:100%;margin-top:4px;padding:2px 5px;border:1px solid #b9c4ae;border-radius:4px;font-size:10.5px;background:#fff">
+      </details>
+      <div id="tc-info"></div>
+    </div>
+    <div class="win-resizer" data-resize="tree-card" title="拖拽右下角可自由缩放单木详情卡尺寸"></div>
+  </div>
+  <div id="species-modal">
+    <div class="sm-head" id="sm-drag-handle">
+      <b>🌿 东北森林样地树种三维构型与植物学图鉴</b>
+      <span style="font-size:11.5px;opacity:0.85;flex:1" id="sm-subtitle">点击样地内树种可一键多选高亮</span>
+      <button class="ctl-btn" id="sm-close" style="padding:2px 9px">✕ 关闭</button>
+    </div>
+    <div class="sm-body">
+      <div class="sm-grid" id="sm-grid"></div>
+    </div>
+    <div class="win-resizer" data-resize="species-modal" title="拖拽右下角可自由缩放图鉴窗口尺寸"></div>
+  </div>
+
+  <div id="loading"><div class="spinner"></div><div id="loading-text">正在加载三维森林…</div></div>
+
+  <script>
+    if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        const rad = Math.min(typeof r === 'number' ? r : (Array.isArray(r) ? r[0] : 6), w / 2, h / 2);
+        this.moveTo(x + rad, y);
+        this.arcTo(x + w, y, x + w, y + h, rad);
+        this.arcTo(x + w, y + h, x, y + h, rad);
+        this.arcTo(x, y + h, x, y, rad);
+        this.arcTo(x, y, x + w, y, rad);
+        this.closePath();
+        return this;
+      };
+    }
+    window.__pageErrors = [];
+    window.addEventListener('error', (e) => {
+      if (e && e.message) window.__pageErrors.push(String(e.message));
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      if (e && e.reason) window.__pageErrors.push('P: ' + String(e.reason));
+    });
+    // 仅当在软件内置单文件沙箱预览窗中打开（沙箱拦截外部 vendor/three.module.js，window.THREE 未定义）时，
+    // 才切换为外部浏览器直达引导卡；在 Chrome / Edge / Firefox / Safari 等真实浏览器中绝不触发。
+    setTimeout(() => {
+      if (window.THREE || window.__viewer) return;
+      const ld = document.getElementById('loading');
+      if (!ld || ld.classList.contains('hidden')) return;
+      const sp = ld.querySelector('.spinner');
+      if (sp) sp.style.display = 'none';
+      const el = document.getElementById('loading-text');
+      if (el) {
+        el.innerHTML = `
+          <div style="max-width:540px;background:rgba(247,244,236,0.97);color:#1e3d28;padding:20px 24px;border-radius:12px;border:1px solid #d6d0c2;box-shadow:0 12px 36px rgba(0,0,0,0.35);line-height:1.7;text-align:left">
+            <div style="font-size:16px;font-weight:700;margin-bottom:8px">🌲 请在外部浏览器（Edge / Chrome）中打开三维森林</div>
+            <div style="font-size:12.5px;color:#4a5248;margin-bottom:12px">
+              当前右侧窗口为软件内置的单文件沙箱预览，会拦截外部 <code>three.module.js</code>（1.2MB）三维引擎脚本（与桌面端 <code>twin_page.py</code> 默认调用系统外部浏览器同理）。
+            </div>
+            <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">方式一（免启动服务 · 直接复制粘贴到浏览器地址栏）：</div>
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <input id="u-file" readonly value="file:///E:/林样三维可视化_研发/V2.1_续开发/web/viewer.html" style="flex:1;padding:6px 9px;border:1px solid #b9c4ae;border-radius:6px;font-size:12px;background:#fff;color:#1e3d28">
+              <button onclick="navigator.clipboard?.writeText(document.getElementById('u-file').value);this.textContent='✓ 已复制'" style="padding:6px 12px;border:none;border-radius:6px;background:#2d5a3d;color:#fff;cursor:pointer;font-size:12px;font-weight:600">复制地址</button>
+            </div>
+            <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">方式二（启动本地服务后访问完整 34 样地与数据管理）：</div>
+            <div style="display:flex;gap:6px">
+              <input id="u-http" readonly value="http://127.0.0.1:8652/viewer.html" style="flex:1;padding:6px 9px;border:1px solid #b9c4ae;border-radius:6px;font-size:12px;background:#fff;color:#1e3d28">
+              <button onclick="navigator.clipboard?.writeText(document.getElementById('u-http').value);this.textContent='✓ 已复制'" style="padding:6px 12px;border:none;border-radius:6px;background:#e6a832;color:#2b1d00;cursor:pointer;font-size:12px;font-weight:600">复制网址</button>
+            </div>
+          </div>`;
+      }
+    }, 1000);
+  </script>
+  <script src="./vendor/three.module.js?v=R5V42"></script>
+  <script src="./vendor/OrbitControls.js?v=R5V42"></script>
+  <script src="./js/fm1_inline_data.js?v=R5V42"></script>
+  <script src="./js/deep_link.js?v=R5V42"></script>
+  <script src="./js/stem_curve.js?v=R5V42"></script>
+  <script src="./js/species_profiles.js?v=R5V42"></script>
+  <script src="./js/realistic_trees.js?v=R5V42"></script>
+  <script src="./js/viewer_smoke.js?v=R5V42"></script>
+  <script src="./js/fm1_viewer.js?v=R5V42"></script>
+  <script>
+    // 顶栏与视角工具栏高度实时同步：动态计算 --hud-top 与 --subbar-top，确保右侧单木卡与下方浮窗永不遮挡按钮栏
+    (() => {
+      const topbar = document.getElementById('topbar');
+      const viewRow = document.getElementById('view-row');
+      if (!topbar) return;
+      let lastH = -1, lastSub = -1;
+      const sync = () => {
+        const minUI = document.body.classList.contains('ui-minimized');
+        const h = minUI ? 4 : topbar.offsetHeight;
+        const hudTop = h + 8;
+        if (hudTop !== lastH) {
+          lastH = hudTop;
+          document.documentElement.style.setProperty('--hud-top', hudTop + 'px');
+        }
+        const vrVisible = viewRow && !viewRow.classList.contains('vr-hidden') && !minUI;
+        const vrH = vrVisible ? viewRow.offsetHeight : 0;
+        const subTop = hudTop + (vrH > 0 ? vrH + 8 : 0);
+        if (subTop !== lastSub) {
+          lastSub = subTop;
+          document.documentElement.style.setProperty('--subbar-top', subTop + 'px');
+        }
+      };
+      if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(sync);
+        ro.observe(topbar);
+        if (viewRow) ro.observe(viewRow);
+      }
+      window.addEventListener('resize', sync);
+      setInterval(sync, 800);
+      sync();
+    })();
+    // FPS HUD：rAF 帧间隔持续采样
+    (() => {
+      const times = [];
+      let last = performance.now();
+      const el = () => document.querySelector('#fps');
+      function tick() {
+        const now = performance.now();
+        times.push(now - last); last = now;
+        if (times.length > 90) times.shift();
+        if (el()) {
+          const arr = times.slice(2);
+          if (arr.length > 5) {
+            const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+            const sorted = [...arr].sort((a, b) => a - b);
+            const p95 = sorted[Math.floor(sorted.length * 0.95)];
+            el().textContent = 'FPS ' + Math.round(1000 / avg) + ' ｜ 帧 ' +
+              (Math.round(avg * 10) / 10) + '/' + (Math.round(p95 * 10) / 10) + 'ms';
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    })();
+  </script>
+</body>
+</html>

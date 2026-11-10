@@ -1,0 +1,67 @@
+{
+  "schema": "fm1-tree-assets/1.0",
+  "updated": "2026-11-01",
+  "coordinate": {
+    "axis": "Y-up",
+    "origin": "树基(地面)",
+    "unit": "m",
+    "breast_height_m": 1.3,
+    "notes": "所有资产原点=树基、Y向上、米制；树干离地1.3m处直径须等于该树该期实测DBH"
+  },
+  "assets": [
+    {
+      "asset_id": "larch_proc_r4",
+      "version": "r4",
+      "source": "tools/tree_asset_pipeline.py gen_larch()（项目自有程序化生成）",
+      "license": "项目自有",
+      "species": ["落叶松"],
+      "format": "GLB",
+      "lod": { "L0": "逐树生成(全细节)", "L1": "逐树生成(0.35密度)", "L2": "逐树生成(0.12密度)" },
+      "calibration": "per_tree_params",
+      "notes": "逐树按实测DBH/H/冠幅直接生成，y=1.3m精确环"
+    },
+    {
+      "asset_id": "birch_innerscene_r4",
+      "version": "r4",
+      "source": "Innerscene Mature Silver Birch (CC0) + tools/tree_asset_pipeline.py fit_birch()",
+      "license": "CC0 1.0",
+      "species": ["白桦"],
+      "format": "GLB",
+      "lod": { "L0": "改造源资产(52k面)", "L1": "简化20.8k", "L2": "简化9k" },
+      "calibration": "global_radial_gain",
+      "notes": "全树Y缩放至实测H+树干全局径向增益命中DBH/2@1.3m；放大树补充叶簇层"
+    },
+    {
+      "asset_id": "larch_proc_r3",
+      "version": "r3",
+      "source": "第三轮程序化生成（对照版本）",
+      "license": "项目自有",
+      "species": ["落叶松"],
+      "format": "GLB",
+      "lod": { "L0": "larch_{tag}_L0.glb", "L1": "larch_{tag}_L1.glb", "L2": "larch_{tag}_L2.glb" },
+      "calibration": "per_tree_params",
+      "notes": "次级枝与叶密度低于r4；保留作对照"
+    },
+    {
+      "asset_id": "birch_innerscene_r3",
+      "version": "r3",
+      "source": "第三轮白桦改造（对照版本）",
+      "license": "CC0 1.0",
+      "species": ["白桦"],
+      "format": "GLB",
+      "lod": { "L0": "birch_{tag}_L0.glb", "L1": "birch_{tag}_L1.glb", "L2": "birch_{tag}_L2.glb" },
+      "calibration": "global_radial_gain",
+      "notes": "无补充叶簇层；保留作对照"
+    }
+  ],
+  "assignment": {
+    "落叶松": "larch_proc_r4",
+    "白桦": "birch_innerscene_r4"
+  },
+  "file_patterns": {
+    "hero_per_year": "{species_prefix}_{tag}_{year}_L{lod}.glb",
+    "hero_single": "{species_prefix}_{tag}_L{lod}.glb",
+    "bg_variant": "bg/bg_{species}_{k}.glb"
+  },
+  "bg_variants": "见 manifest.json bg_variants 字段（12落叶松+4白桦轻量变体，真实背景树按H就近缩放——轻量代理，非逐树几何，界面标注示意）"
+}

@@ -1,0 +1,40 @@
+{
+  "id": "FM2",
+  "name": "二号样地（模拟）",
+  "data_nature": "simulated",
+  "years": [
+    2023,
+    2026
+  ],
+  "tree_count": 160,
+  "plot_meta": {
+    "region": null,
+    "site": null,
+    "plot_id": "FM2",
+    "longitude": null,
+    "latitude": null,
+    "elevation_m": null,
+    "aspect": null,
+    "coordinate_reference": "unknown",
+    "point_role": "approximate_corner",
+    "corner_identity": "unknown",
+    "precision": "unknown",
+    "vertical_datum": "unknown",
+    "verification_status": "未提供（地理属性未知）",
+    "source": "样地导入管线（未提供位置元数据：地理属性未知，不继承其他样地）",
+    "survey_area_m2": null,
+    "survey_area_source": null,
+    "notes": [
+      "位置元数据未随调查表提供：区域/地点/经纬度/海拔/坡向均为未知",
+      "地理属性可在补充核实后通过导入参数更新"
+    ]
+  },
+  "integrity": {
+    "global_blocked": false,
+    "blocking_reason": null,
+    "issue_count": 0,
+    "quarantined_seq_count": 0
+  },
+  "imported_at": "2026-11-03T02:19:29",
+  "note": "三维单木按实测参数以树种资产模板实时渲染；局部坐标未配准"
+}

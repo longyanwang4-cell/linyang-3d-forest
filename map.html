@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>林样智记 V2.1 · 研究区地图与样地导航中枢</title>
+<style>
+  :root {
+    --primary: #2d5a3d;
+    --primary-dark: #193523;
+    --bg-panel: rgba(248, 246, 240, 0.96);
+    --text: #222622;
+    --text-light: #5c635a;
+    --border: #d5cfc0;
+    --map-top: 56px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #globe { width: 100%; height: 100%; overflow: hidden; background: #14241b; touch-action: none; overscroll-behavior: none; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* 备用/叠加研究区等高线地形交互画布 */
+  #topo-canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2;
+    pointer-events: none; opacity: 0; transition: opacity 0.25s;
+  }
+  #topo-canvas.active {
+    opacity: 1; pointer-events: auto;
+  }
+
+  #topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 15;
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    padding: 8px 16px;
+    background: linear-gradient(180deg, rgba(18,40,26,0.97) 0%, rgba(24,52,34,0.92) 100%);
+    color: #f5f1e8; box-shadow: 0 2px 14px rgba(0,0,0,0.28);
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+    backdrop-filter: blur(8px);
+  }
+  #topbar h1 { font-size: 14.5px; font-weight: 700; margin-right: 6px; white-space: nowrap; }
+  #topbar h1 small { font-weight: 400; opacity: 0.80; margin-left: 8px; font-size: 11.5px; }
+  .nav-btn {
+    padding: 4.5px 11px; border: 1px solid rgba(245,241,232,0.28); border-radius: 6px;
+    background: rgba(245,241,232,0.09); color: #eef2eb; font-size: 12px;
+    text-decoration: none; cursor: pointer; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  }
+  .nav-btn:hover { background: rgba(245,241,232,0.22); border-color: rgba(245,241,232,0.60); color: #fff; }
+  .nav-btn.active {
+    background: linear-gradient(135deg, rgba(64,158,96,0.42), rgba(42,118,68,0.55));
+    border-color: #6fd68e; color: #fff; font-weight: 600;
+  }
+  #btn-enter {
+    padding: 5.5px 15px; border: 1px solid #f3be56; border-radius: 6px;
+    background: linear-gradient(135deg, #ebb03c, #d9961c); color: #241800; font-size: 12px; font-weight: 700;
+    cursor: pointer; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.28); transition: all 0.15s;
+  }
+  #btn-enter.show { display: inline-flex; align-items: center; gap: 4px; }
+  #btn-enter:hover { background: linear-gradient(135deg, #f4bc4d, #e4a328); }
+
+  /* 左侧样地详情与树位缩略预览卡 */
+  #fm1-card {
+    position: absolute; top: var(--map-top); left: 16px; z-index: 12; width: 350px;
+    max-height: calc(100vh - var(--map-top) - 62px); overflow-y: auto;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 11px;
+    padding: 12px 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.30); font-size: 12px;
+    display: none; backdrop-filter: blur(8px);
+  }
+  #fm1-card.show { display: block; }
+  #fm1-card h2 {
+    font-size: 14px; color: var(--primary-dark); margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  #fm1-card table { width: 100%; border-collapse: collapse; }
+  #fm1-card td { padding: 3px 2px; border-bottom: 1px solid #e6e1d5; }
+  #fm1-card td:first-child { color: var(--text-light); white-space: nowrap; width: 78px; }
+  .mini-preview-box {
+    margin-top: 8px; padding: 8px; background: #fbfcf8;
+    border: 1px solid #d8e0d2; border-radius: 8px;
+  }
+  .mini-kpi-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 6px; text-align: center;
+  }
+  .mini-kpi {
+    background: #eef3ea; border-radius: 5px; padding: 4px 2px;
+  }
+  .mini-kpi .mk-v { font-size: 12.5px; font-weight: 700; color: var(--primary-dark); }
+  .mini-kpi .mk-l { font-size: 10px; color: var(--text-light); }
+
+  /* 右侧样地注册表导航栏（GIS 多样地导航中枢） */
+  #plot-sidebar {
+    position: absolute; top: var(--map-top); right: 16px; bottom: 56px; z-index: 12; width: 296px;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 11px;
+    padding: 11px 12px; box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+    display: flex; flex-direction: column; gap: 8px; backdrop-filter: blur(8px);
+  }
+  #plot-sidebar h3 {
+    font-size: 13px; color: var(--primary-dark); display: flex; justify-content: space-between; align-items: center;
+  }
+  #plot-search {
+    width: 100%; padding: 5px 9px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 12px; background: #fff; outline: none;
+  }
+  #plot-search:focus { border-color: var(--primary); }
+  #plot-list {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 2px;
+  }
+  .plot-item {
+    padding: 8px 10px; border: 1px solid #e2ddd0; border-radius: 8px; background: #fff;
+    cursor: pointer; font-size: 12px; transition: all 0.14s;
+  }
+  .plot-item:hover, .plot-item.active {
+    border-color: var(--primary); background: #eaf3ec; box-shadow: 0 2px 6px rgba(45,90,61,0.1);
+  }
+  .plot-item .pi-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: var(--primary-dark); }
+  .plot-item .pi-sub { font-size: 11px; color: var(--text-light); margin-top: 3px; line-height: 1.45; }
+  .pi-badge { font-size: 10px; padding: 1px 6px; border-radius: 9px; font-weight: 600; }
+  .pi-badge.survey { background: #d4e8d6; color: #1d4d2b; }
+  .pi-badge.sim { background: #f5e3bb; color: #8a6410; }
+
+  /* 底部说明（常显） */
+  #map-note {
+    position: absolute; bottom: 10px; left: 16px; right: 16px; z-index: 12;
+    padding: 6px 12px; border-radius: 6px; font-size: 11.5px; line-height: 1.55;
+    background: rgba(30, 52, 36, 0.92); color: #f5f1e8; border: 1px solid rgba(255, 181, 49, 0.45);
+  }
+  /* 悬停提示 */
+  #tooltip {
+    position: absolute; z-index: 16; pointer-events: none; display: none;
+    padding: 6px 10px; border-radius: 6px; font-size: 12px;
+    background: rgba(24,50,32,0.94); color: #f5f1e8; border: 1px solid rgba(255,255,255,0.2);
+  }
+  /* 过渡遮罩 */
+  #transition {
+    position: absolute; inset: 0; z-index: 100; background: #1e3322;
+    opacity: 0; pointer-events: none; transition: opacity 0.35s;
+    display: flex; align-items: center; justify-content: center;
+    color: #dff0d8; font-size: 15px; font-weight: 600;
+  }
+  #transition.show { opacity: 1; pointer-events: all; }
+  .legend-dot {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    background: #ff8c1a; border: 2px solid #fff; margin-right: 6px; vertical-align: -1px;
+  }
+  #cesium-credit { display: none !important; }
+  #mobile-map-tabs {
+    display: inline-flex; position: fixed; top: var(--map-top); right: 16px; z-index: 18;
+    gap: 6px;
+  }
+  #plot-sidebar {
+    top: calc(var(--map-top) + 36px);
+  }
+  #plot-sidebar.panel-collapsed,
+  #fm1-card.panel-collapsed {
+    display: none !important;
+  }
+  .mm-tab-btn {
+    padding: 5px 11px; border-radius: 99px; font-size: 11.5px; font-weight: 700;
+    background: rgba(18, 40, 26, 0.92); color: #f5f1e8;
+    border: 1px solid rgba(255, 181, 49, 0.65); box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .mm-tab-btn:hover { background: rgba(45, 90, 61, 0.95); }
+  .mm-tab-btn.active { background: #e6a832; color: #1f1400; }
+
+  @media (max-width: 820px) {
+    #topbar {
+      flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; padding: 6px 10px; gap: 5px;
+    }
+    #topbar::-webkit-scrollbar { display: none; }
+    #topbar h1 small { display: none; }
+    #topbar > * { flex-shrink: 0; }
+    #mobile-map-tabs { right: 8px; }
+    #fm1-card {
+      top: auto; left: 8px; right: 8px; bottom: 8px; width: auto;
+      max-height: 46vh; z-index: 16; padding: 10px 12px; border-radius: 12px;
+    }
+    #fm1-card.mobile-hidden { display: none !important; }
+    #plot-sidebar {
+      top: auto; left: 8px; right: 8px; bottom: 8px; width: auto;
+      height: 52vh; z-index: 17; display: none; border-radius: 12px;
+    }
+    #plot-sidebar.mobile-open { display: flex; }
+    #map-note { display: none !important; }
+    #map-note-pill { display: block !important; bottom: auto !important; top: var(--map-top) !important; left: 8px !important; font-size: 11px !important; }
+  }
+</style>
+</head>
+<body>
+  <div id="globe"></div>
+  <canvas id="topo-canvas"></canvas>
+
+  <header id="topbar">
+    <h1>林样智记 V2.1<small>研究区地图与多样地导航中枢 · 大兴安岭 乌尔其汗—门德利</small></h1>
+    <button class="nav-btn" id="btn-cam-region" title="俯瞰大兴安岭呼伦贝尔林区">🌏 林区全景</button>
+    <button class="nav-btn" id="btn-cam-study" title="聚焦乌尔其汗—门德利研究区">⛰ 乌尔其汗研究区</button>
+    <button class="nav-btn" id="btn-cam-fm1" title="飞向 FM1 大致角点参考位置">📍 聚焦 FM1 角点</button>
+    <button class="nav-btn" id="btn-toggle-topo" title="切换研究区等高线地形态势图">🗺 等高线地形视图</button>
+    <div style="flex:1"></div>
+    <a class="nav-btn" id="link-manage" href="manage.html">📋 样地数据管理</a>
+    <a class="nav-btn" id="link-viewer" href="viewer.html">🌲 三维森林查看器</a>
+    <button id="btn-enter">进入 FM1 三维森林 →</button>
+  </header>
+
+  <div id="mobile-map-tabs">
+    <button type="button" class="mm-tab-btn active" id="mm-btn-card">📍 样地卡片</button>
+    <button type="button" class="mm-tab-btn" id="mm-btn-list">📑 样地列表</button>
+    <button type="button" class="mm-tab-btn" id="mm-btn-hide">🌏 全屏地球</button>
+  </div>
+  <aside id="fm1-card"></aside>
+  <aside id="plot-sidebar">
+    <h3><span>样地导航注册表</span><span id="plot-count" style="font-size:11px;color:#646a62;font-weight:400"></span></h3>
+    <input id="plot-search" placeholder="筛选样地名称、树种或编号…" autocomplete="off">
+    <div id="plot-list"></div>
+    <div style="font-size:11px;color:#626860;border-top:1px solid #e2ddd0;padding-top:6px">
+      💡 单击样地查看缩略树位图与林分指标，双击或点击「进入」直接打开三维森林。
+    </div>
+  </aside>
+  <div id="tooltip"></div>
+
+  <div id="map-note" style="display:flex;align-items:center;gap:8px">
+    <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span class="legend-dot"></span><b>橙点＝FM1 样地“大致角点”参考位置（121.7146°E，49.75729°N，海拔 877m，东北坡）</b> · ⚠ 按 WGS84 近似显示，不构成精确地理配准；未登记经纬度样地仅在右侧列表导航。</span>
+    <button class="nav-btn" id="map-note-collapse" style="padding:1px 7px;font-size:11px">▾ 收起</button>
+  </div>
+  <div id="map-note-pill" style="display:none;position:absolute;bottom:10px;left:16px;z-index:12;padding:4px 11px;border-radius:6px;font-size:11.5px;cursor:pointer;background:rgba(20,44,28,0.92);color:#ffde8a;border:1px solid rgba(255,181,49,0.5)" title="点击展开地理基准说明">📍 地理定位说明 ▸</div>
+
+  <div id="transition">正在进入三维森林…</div>
+
+  <script>
+    if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        const rad = Math.min(typeof r === 'number' ? r : (Array.isArray(r) ? r[0] : 6), w / 2, h / 2);
+        this.moveTo(x + rad, y);
+        this.arcTo(x + w, y, x + w, y + h, rad);
+        this.arcTo(x + w, y + h, x, y + h, rad);
+        this.arcTo(x, y + h, x, y, rad);
+        this.arcTo(x, y, x + w, y, rad);
+        this.closePath();
+        return this;
+      };
+    }
+  </script>
+  <script src="js/fm1_inline_data.js?v=R5V42"></script>
+  <script src="js/species_profiles.js?v=R5V42"></script>
+  <script src="vendor/three.module.js?v=R5V42"></script>
+  <script src="vendor/OrbitControls.js?v=R5V42"></script>
+  <script src="js/map_main.js?v=R5V42"></script>
+  <script>
+    (() => {
+      const tb = document.getElementById('topbar');
+      const sync = () => {
+        if (tb) document.documentElement.style.setProperty('--map-top', (tb.offsetHeight + 10) + 'px');
+      };
+      if (tb && typeof ResizeObserver !== 'undefined') new ResizeObserver(sync).observe(tb);
+      window.addEventListener('resize', sync);
+      sync();
+      const note = document.getElementById('map-note');
+      const pill = document.getElementById('map-note-pill');
+      document.getElementById('map-note-collapse')?.addEventListener('click', () => {
+        if (note) note.style.display = 'none';
+        if (pill) pill.style.display = 'block';
+      });
+      pill?.addEventListener('click', () => {
+        if (note) note.style.display = 'flex';
+        if (pill) pill.style.display = 'none';
+      });
+
+      // 仅当在软件内置单文件沙箱预览窗中打开（外部 three.module.js 被沙箱拦截，window.THREE 未定义）时，才启动内联 Canvas 球面投影地球。
+      // 在 Chrome / Edge / Firefox / Safari 等真实浏览器中（无论 file:// 还是 http://）均由 map_main.js 的 WebGL 3D 地球渲染，绝不覆盖画布。
+      setTimeout(() => {
+        if (window.THREE || window.__fm1Viewer) return;
+        const cvs = document.getElementById('topo-canvas');
+        if (!cvs) return;
+        cvs.classList.add('active');
+        let centerLon = 116.0, centerLat = 42.0, zoom = 1.08;
+        let dragging = false, lx = 0, ly = 0, pulse = 0;
+
+        const polys = [
+          { col: '#284d34', stroke: '#427552', pts: [[-9,37],[-9,43],[-2,44],[-5,48],[2,51],[8,54],[14,68],[28,71],[58,70],[92,76],[135,71],[175,66],[162,55],[142,54],[135,43],[129,35],[124,40],[121,39],[122,31],[117,23],[108,21],[105,9],[98,8],[88,22],[77,8],[68,24],[56,26],[44,12],[34,28],[26,40],[12,44],[-2,37]] },
+          { col: '#316a43', stroke: '#68b87e', pts: [[74,39],[83,47],[88,49],[97,43],[112,44],[118,50],[121,53.3],[125,53],[131,48],[134.5,48],[131,42.5],[124.3,40],[121.5,39],[122.5,37],[121.8,31],[119,25],[110,20.2],[104,22.8],[97,28],[88,27.5],[78,33],[74,39]] },
+          { col: '#3a5434', stroke: '#54734b', pts: [[-17,15],[-13,27],[-6,36],[12,33],[33,31],[51,12],[40,-15],[28,-33],[18,-34],[12,-14],[5,5],[-17,15]] },
+          { col: '#2b5438', stroke: '#467a56', pts: [[-165,66],[-135,70],[-82,72],[-54,48],[-75,36],[-81,25],[-97,20],[-84,10],[-105,20],[-122,37],[-135,57],[-165,66]] },
+          { col: '#315e3e', stroke: '#4d825c', pts: [[130,31],[137,36],[141,41],[145,44],[141,38],[130,31]] },
+          { col: '#4f5638', stroke: '#6c734c', pts: [[114,-22],[131,-12],[150,-22],[150,-37],[130,-32],[116,-34],[114,-22]] },
+        ];
+        const stars = Array.from({ length: 180 }, (_, i) => ({
+          u: ((i * 7919) % 1000) / 1000, v: ((i * 6271) % 1000) / 1000, r: 0.6 + (i % 3) * 0.55
+        }));
+
+        const project = (lon, lat, cx, cy, R) => {
+          const lam = (lon - centerLon) * Math.PI / 180;
+          const phi = lat * Math.PI / 180;
+          const phi0 = centerLat * Math.PI / 180;
+          const cosC = Math.sin(phi0) * Math.sin(phi) + Math.cos(phi0) * Math.cos(phi) * Math.cos(lam);
+          const x = cx + R * Math.cos(phi) * Math.sin(lam);
+          const y = cy - R * (Math.cos(phi0) * Math.sin(phi) - Math.sin(phi0) * Math.cos(phi) * Math.cos(lam));
+          return { x, y, vis: cosC > 0 };
+        };
+
+        const renderGlobe = () => {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const w = window.innerWidth, h = window.innerHeight;
+          if (cvs.width !== Math.round(w * dpr) || cvs.height !== Math.round(h * dpr)) {
+            cvs.width = Math.round(w * dpr); cvs.height = Math.round(h * dpr);
+          }
+          const ctx = cvs.getContext('2d');
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.fillStyle = '#091319';
+          ctx.fillRect(0, 0, w, h);
+
+          for (const st of stars) {
+            ctx.fillStyle = 'rgba(210,235,248,0.65)';
+            ctx.beginPath(); ctx.arc(st.u * w, st.v * h, st.r, 0, Math.PI * 2); ctx.fill();
+          }
+
+          const cx = w * 0.51, cy = h * 0.52;
+          const R = Math.min(w, h) * 0.36 * zoom;
+
+          // 地球瑞利大气外发光光环
+          const halo = ctx.createRadialGradient(cx, cy, R * 0.92, cx, cy, R * 1.16);
+          halo.addColorStop(0, 'rgba(64, 188, 235, 0.42)');
+          halo.addColorStop(0.5, 'rgba(38, 166, 154, 0.16)');
+          halo.addColorStop(1, 'rgba(9, 19, 25, 0)');
+          ctx.fillStyle = halo;
+          ctx.beginPath(); ctx.arc(cx, cy, R * 1.16, 0, Math.PI * 2); ctx.fill();
+
+          // 球体海洋光照立体渐变
+          ctx.save();
+          ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
+          const ocean = ctx.createRadialGradient(cx - R * 0.28, cy - R * 0.28, R * 0.08, cx, cy, R * 1.05);
+          ocean.addColorStop(0, '#1d5478');
+          ocean.addColorStop(0.55, '#123854');
+          ocean.addColorStop(1, '#091d2e');
+          ctx.fillStyle = ocean;
+          ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+
+          // 3D 球面经纬网格
+          ctx.strokeStyle = 'rgba(150, 215, 240, 0.14)';
+          ctx.lineWidth = 0.8;
+          for (let lon = -180; lon < 180; lon += 20) {
+            ctx.beginPath();
+            let started = false;
+            for (let lat = -80; lat <= 80; lat += 5) {
+              const p = project(lon, lat, cx, cy, R);
+              if (p.vis) { if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y); }
+              else started = false;
+            }
+            ctx.stroke();
+          }
+          for (let lat = -60; lat <= 60; lat += 20) {
+            ctx.beginPath();
+            let started = false;
+            for (let lon = -180; lon <= 180; lon += 5) {
+              const p = project(lon, lat, cx, cy, R);
+              if (p.vis) { if (!started) { ctx.moveTo(p.x, p.y); started = true; } else ctx.lineTo(p.x, p.y); }
+              else started = false;
+            }
+            ctx.stroke();
+          }
+
+          // 各大洲与大兴安岭山脉绘制
+          for (const poly of polys) {
+            ctx.beginPath();
+            let visCount = 0;
+            poly.pts.forEach(([lo, la], idx) => {
+              const p = project(lo, la, cx, cy, R);
+              if (p.vis) visCount++;
+              if (idx === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+            });
+            if (visCount > 2) {
+              ctx.closePath();
+              ctx.fillStyle = poly.col; ctx.fill();
+              ctx.strokeStyle = poly.stroke; ctx.lineWidth = 1.2; ctx.stroke();
+            }
+          }
+
+          // 大兴安岭翠绿山脊高亮带
+          const ridge = [[118.5,44.5],[120.2,47.5],[121.6,49.8],[122.8,52.5]];
+          ctx.beginPath();
+          let rVis = true;
+          ridge.forEach(([lo, la], i) => {
+            const p = project(lo, la, cx, cy, R);
+            if (!p.vis) rVis = false;
+            if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+          });
+          if (rVis) {
+            ctx.strokeStyle = 'rgba(102, 226, 134, 0.65)';
+            ctx.lineWidth = 8 * zoom; ctx.lineCap = 'round'; ctx.stroke();
+          }
+
+          // FM1 核心标杆与脉冲环
+          const fp = project(121.7146, 49.7573, cx, cy, R);
+          if (fp.vis) {
+            pulse = (pulse + 0.025) % 1;
+            ctx.strokeStyle = `rgba(255, 172, 42, ${1 - pulse})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(fp.x, fp.y, 6 + pulse * 22, 0, Math.PI * 2); ctx.stroke();
+
+            ctx.fillStyle = '#ff9424';
+            ctx.beginPath(); ctx.arc(fp.x, fp.y, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+
+            ctx.fillStyle = 'rgba(18, 40, 26, 0.92)';
+            ctx.strokeStyle = '#ffb531'; ctx.lineWidth = 1.2;
+            ctx.beginPath(); ctx.roundRect(fp.x - 98, fp.y - 38, 196, 26, 7); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#fff8e6'; ctx.font = 'bold 12px "Microsoft YaHei"';
+            ctx.textAlign = 'center'; ctx.fillText('📍 FM1 样地 · 乌尔其汗 (877m)', fp.x, fp.y - 21);
+          }
+
+          // 内边缘菲涅尔蓝晕
+          const innerRim = ctx.createRadialGradient(cx, cy, R * 0.80, cx, cy, R);
+          innerRim.addColorStop(0, 'rgba(79, 195, 247, 0)');
+          innerRim.addColorStop(1, 'rgba(79, 195, 247, 0.36)');
+          ctx.fillStyle = innerRim;
+          ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+
+          requestAnimationFrame(renderGlobe);
+        };
+        renderGlobe();
+
+        cvs.addEventListener('pointerdown', (e) => { dragging = true; lx = e.clientX; ly = e.clientY; cvs.style.cursor = 'grabbing'; });
+        window.addEventListener('pointerup', () => { dragging = false; cvs.style.cursor = 'grab'; });
+        window.addEventListener('pointermove', (e) => {
+          if (!dragging) return;
+          centerLon -= (e.clientX - lx) * (0.28 / zoom);
+          centerLat = Math.max(-75, Math.min(75, centerLat + (e.clientY - ly) * (0.28 / zoom)));
+          lx = e.clientX; ly = e.clientY;
+        });
+        cvs.addEventListener('wheel', (e) => {
+          zoom = Math.max(0.65, Math.min(3.4, zoom * (e.deltaY > 0 ? 0.92 : 1.09)));
+        }, { passive: true });
+        document.getElementById('btn-cam-region')?.addEventListener('click', () => { centerLon = 116; centerLat = 42; zoom = 1.08; });
+        document.getElementById('btn-cam-study')?.addEventListener('click', () => { centerLon = 121.7; centerLat = 49.7; zoom = 1.85; });
+        document.getElementById('btn-cam-fm1')?.addEventListener('click', () => { centerLon = 121.71; centerLat = 49.76; zoom = 2.65; });
+
+        // 填充左侧卡片与右侧样地注册表（供内置预览窗直接查看）
+        const card = document.getElementById('fm1-card');
+        const listEl = document.getElementById('plot-list');
+        const countEl = document.getElementById('plot-count');
+        const plots = [
+          { id: 'fm1', name: 'FM1 样地（乌尔其汗—门德利）', yrs: '2023/2026', sp: 2, n: 160, dg: '14.1', ba: '2.33', sim: false },
+          { id: 'FM2', name: '二号样地（模拟）', yrs: '2023/2026', sp: 2, n: 160, dg: '14.3', ba: '2.39', sim: true },
+          { id: 'CAP05', name: '十树种针阔混交样地', yrs: '2020/2023/2026', sp: 10, n: 96, dg: '14.8', ba: '1.68', sim: true },
+        ];
+        if (countEl) countEl.textContent = '共 3 个样地';
+        const showP = (p) => {
+          if (!card) return;
+          card.innerHTML = `<h2><span>${p.name}</span><span class="pi-badge ${p.sim ? 'sim' : 'survey'}">${p.sim ? '模拟测试' : '实测基线'}</span></h2>
+            <table>
+              <tr><td>经纬度</td><td><b>${p.id === 'fm1' ? '121.7146°E, 49.75729°N' : '未登记经纬度（局部坐标）'}</b></td></tr>
+              <tr><td>海拔坡向</td><td>${p.id === 'fm1' ? '877 m · 东北坡' : '30m × 30m 样地相对坐标'}</td></tr>
+              <tr><td>调查期</td><td>${p.yrs} 年（${p.n} 株）</td></tr>
+            </table>
+            <div class="mini-preview-box"><div class="mini-kpi-row">
+              <div class="mini-kpi"><div class="mk-v">${p.n}</div><div class="mk-l">株数</div></div>
+              <div class="mini-kpi"><div class="mk-v">${p.sp}种</div><div class="mk-l">树种</div></div>
+              <div class="mini-kpi"><div class="mk-v">${p.dg}cm</div><div class="mk-l">平均胸径</div></div>
+              <div class="mini-kpi"><div class="mk-v">${p.ba}m²</div><div class="mk-l">断面积</div></div>
+            </div></div>`;
+          card.classList.add('show');
+          document.getElementById('btn-enter')?.classList.add('show');
+        };
+        if (listEl && !listEl.children.length) {
+          listEl.innerHTML = plots.map((p, i) => `<div class="plot-item ${i === 0 ? 'active' : ''}" data-i="${i}">
+            <div class="pi-head"><span>${p.name}</span><span class="pi-badge ${p.sim ? 'sim' : 'survey'}">${p.sim ? '模拟' : '实测'}</span></div>
+            <div class="pi-sub">ID: ${p.id} · 调查期: ${p.yrs} · ${p.sp}树种</div></div>`).join('');
+          listEl.querySelectorAll('.plot-item').forEach((el) => {
+            el.addEventListener('click', () => {
+              listEl.querySelectorAll('.plot-item').forEach((n) => n.classList.remove('active'));
+              el.classList.add('active');
+              showP(plots[+el.dataset.i]);
+            });
+          });
+          showP(plots[0]);
+        }
+      }, 150);
+    })();
+  </script>
+</body>
+</html>
